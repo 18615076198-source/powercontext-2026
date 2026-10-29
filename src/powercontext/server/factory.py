@@ -94,6 +94,7 @@ from powercontext.server.mcp import mount_mcp
 from powercontext.server.metrics import CONTENT_TYPE_LATEST, HttpMetricsMiddleware, ServerMetrics
 from powercontext.server.middleware import AuthenticationMiddleware
 from powercontext.server.processing_security import build_worker_security
+from powercontext.server.rate_limit import SharedRateLimitMiddleware
 from powercontext.server.request_id import HttpRequestIdMiddleware
 from powercontext.server.settings import MissingAuthenticationProviderError, ServerSettings
 from powercontext.server.tracing import HttpTracingMiddleware, ServerTracing
@@ -173,6 +174,11 @@ def create_server_app(  # noqa: C901
         handoff_report=resolved.handoff_report,
         inference=resolved.inference,
         external_skills=resolved.external_skills,
+        deployment=resolved.deployment,
+        coordination=resolved.coordination,
+        worker=resolved.worker,
+        operations=resolved.operations,
+        rate_limit=resolved.rate_limit,
     )
     metrics = ServerMetrics(role=resolved.runtime.artifact_processing_role) if resolved.metrics.enabled else None
     resolved_tracing = (
@@ -355,6 +361,12 @@ def create_server_app(  # noqa: C901
                 provider=configured_authentication,
                 dashboard_enabled=resolved.dashboard.enabled,
             ),
+        )
+    if resolved.rate_limit.enabled:
+        # Appended last so it runs inside the authentication middleware and sees
+        # the principal that request was bound to.
+        configured_middleware.append(
+            Middleware(SharedRateLimitMiddleware, config=resolved.rate_limit),
         )
 
     app = create_app(

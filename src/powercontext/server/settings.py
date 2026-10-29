@@ -31,11 +31,16 @@ from powercontext.builtin.code.models import CodeConfig
 from powercontext.builtin.persistence.oceanbase import OceanBaseConfig
 from powercontext.builtin.persistence.sqlite import SQLiteConfig
 from powercontext.builtin.runtime.config import (
+    CoordinationConfig,
     DatabaseConfig,
+    DeploymentConfig,
     ExternalSkillsConfig,
     HandoffReportConfig,
     InferenceConfig,
+    OperationsConfig,
+    RateLimitConfig,
     RuntimeConfig,
+    WorkerConfig,
 )
 from powercontext.paths import default_database_path, default_seekdb_path, powercontext_data_dir, sqlite_url
 from powercontext.transport import is_loopback_host
@@ -230,6 +235,11 @@ class ServerSettings(BaseSettings):
     handoff_report: HandoffReportConfig = Field(default_factory=HandoffReportConfig)
     inference: InferenceConfig = Field(default_factory=InferenceConfig)
     external_skills: ExternalSkillsConfig = Field(default_factory=ExternalSkillsConfig)
+    deployment: DeploymentConfig = Field(default_factory=DeploymentConfig)
+    coordination: CoordinationConfig = Field(default_factory=CoordinationConfig)
+    worker: WorkerConfig = Field(default_factory=WorkerConfig)
+    operations: OperationsConfig = Field(default_factory=OperationsConfig)
+    rate_limit: RateLimitConfig = Field(default_factory=RateLimitConfig)
 
     @field_validator("cursor_signing_secret")
     @classmethod
