@@ -251,10 +251,15 @@ class SeekdbStore(Store):
         return self._rank(query, list(candidates.values()), kinds, limit)
 
     # ---------------------------------------------------------------- 诊断
-    def sql_ping(self) -> list:
-        """用一条 SQL 证明连接可用（doctor 命令使用）。"""
+    def ping(self) -> list:
+        """连通性探针（doctor 命令使用）。
 
-        return self._client.execute("SELECT 1")
+        ``pyseekdb.Client`` 只暴露集合级接口，没有裸 SQL 通道，因此用一次
+        集合列举来证明「连得上、库打得开」。
+        """
+
+        return [item if isinstance(item, str) else getattr(item, "name", str(item))
+                for item in self._client.list_collections()]
 
     def backend_info(self) -> dict:
         info = {
@@ -265,7 +270,7 @@ class SeekdbStore(Store):
             "chunks": self.count(),
         }
         try:
-            info["sql_ping"] = str(self.sql_ping())
+            info["collections"] = self.ping()
         except Exception as exc:  # pragma: no cover
-            info["sql_ping"] = f"failed: {exc}"
+            info["collections"] = f"failed: {exc}"
         return info

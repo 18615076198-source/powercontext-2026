@@ -1,7 +1,10 @@
 # 规有所依 —— 面向软件持续演进的 SDD 上下文管理系统
 
+[![minimax-sddctx-ci](https://github.com/18615076198-source/powercontext-2026/actions/workflows/minimax-ci.yml/badge.svg?branch=2026-competition-ecosystem)](https://github.com/18615076198-source/powercontext-2026/actions/workflows/minimax-ci.yml)
+
 > 赛题：MiniMax × OceanBase《规有所依——面向软件持续演进的 SDD 上下文管理系统》
-> 仓库：`oceanbase/powercontext` 分支 `2026-competition-ecosystem`，产物位于 `minimax/`
+> 仓库：`18615076198-source/powercontext-2026` 分支 `2026-competition-ecosystem`，产物位于 `minimax/`
+> CI：ubuntu + 嵌入式 seekdb 跑完整流程，结果见 `docs/05-CI验证记录.md`
 
 AI 改代码时最容易出问题的三件事：**不知道要遵守哪些规格、不知道要改哪里、改完不知道有没有破坏原有行为**。
 `minimax/` 里的 `sddctx` 就是回答这三个问题的上下文模块：它把规格、代码、测试索引进 **seekdb**，
@@ -43,7 +46,7 @@ python -m pip install -r requirements.txt   # pyseekdb + powercontext + pytest
 cp .env.example .env                        # 填入 MINIMAX_API_KEY
 
 # 另开一个终端启动 PowerContext（SQLite 后端，无需额外数据库）
-powercontext server run --no-env-file --host 127.0.0.1 --port 8077
+powercontext server run --no-env-file --host 127.0.0.1 --port 8077 --role all
 
 # 本终端
 export PYTHONPATH=src SDDCTX_STORE=seekdb POWERCONTEXT_URL=http://127.0.0.1:8077
@@ -146,17 +149,18 @@ minimax/
 ├── demo/billing-service/        被修改的业务工程（规格 + 源码 + 回归测试）
 ├── samples/task-001-.../        验证样例：任务、规格更新、验收用例
 ├── runs/task-001-.../           运行证据：上下文包、diff、测试结果、状态
-├── tests/                       模块自身测试（28 条，不需要网络）
-└── docs/                        设计说明、验证样例、技术使用记录、提测说明
+├── tests/                       模块自身测试（25 条，不需要网络）
+└── docs/                        设计说明、验证样例、技术使用记录、提测说明、CI 记录
 ```
 
 ## 八、已知边界
 
 1. **Windows 无法跑嵌入式 seekdb**：`pylibseekdb` 只有 Linux/macOS 轮子。模块内置 SQLite 兜底后端（`SDDCTX_STORE=sqlite`），
-   两条后端共用同一套接口与同一批测试；评测与 CI 使用 seekdb。
+   两条后端共用同一套接口与同一批测试；seekdb 路径由 CI 在 ubuntu 上跑通，见 `docs/05-CI验证记录.md`。
 2. **MiniMax 输出是「整文件重写」而不是 diff**：小文件场景下整文件替换的落地成功率远高于 diff 逆向，
-   但代价是单次输出更长（本次约 6.8 KB）。护栏会拒绝路径越权、删除公共符号、语法错误的输出。
+   但代价是单次输出更长（本次约 3.9 KB）。护栏会拒绝路径越权、删除公共符号、语法错误的输出。
 3. **向量检索默认关闭**：`SDDCTX_SEEKDB_EMBEDDING=off` 时只用全文下推，避免首次运行下载 embedding 模型；
+   此时集合的稠密向量列写入零向量（seekdb 要求该列必有值），检索与排序不依赖它。
    设为 `default` 可叠加向量近邻（`collection.query`）。
 4. **状态以 Memory + Source 承载**，未使用 Handoff/Work Contract 全流程——后者需要额外的接收方身份与回执建模，
    与本题「保存进展、重启后复用」的目标相比收益不大。
