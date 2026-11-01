@@ -41,6 +41,7 @@ from powercontext.limits import (
     MAX_EXTERNAL_SKILL_HOST_ID_LENGTH,
     MAX_EXTERNAL_SKILL_LOCATOR_LENGTH,
     MAX_EXTERNAL_SKILL_NAME_LENGTH,
+    MAX_LIFECYCLE_NODE_ID_LENGTH,
     MAX_SCOPE_BINDING_EXTERNAL_ID_LENGTH,
     MAX_SCOPE_BINDING_INTEGRATION_LENGTH,
     MAX_SCOPE_BINDING_KIND_LENGTH,
@@ -1180,6 +1181,24 @@ RECURRENCE_OBSERVATION_TABLE = Table(
 
 RECURRENCE_TABLES = (RECURRENCE_MATCH_TABLE, RECURRENCE_OBSERVATION_TABLE)
 
+SOURCE_LIFECYCLE_TABLE = Table(
+    "pc_source_lifecycle_nodes",
+    SHARED_METADATA,
+    Column("scope_id", identity_string(MAX_SCOPE_ID_LENGTH), primary_key=True),
+    Column("node_id", identity_string(MAX_LIFECYCLE_NODE_ID_LENGTH), primary_key=True),
+    Column("family", identity_string(16), nullable=False),
+    Column("reference", _canonical_payload_type(), nullable=False),
+    Column("revision", BigInteger, nullable=False, server_default="0"),
+    Column("sequence", BigInteger, nullable=False, server_default="0"),
+    Column("available", Boolean, nullable=False, server_default="0"),
+    Column("policy", identity_string(8), nullable=False, server_default="all"),
+    Column("parents", _canonical_payload_type(), nullable=False),
+    CheckConstraint("family IN ('source', 'memory', 'topic')", name="ck_pc_source_lifecycle_family"),
+    CheckConstraint("policy IN ('all', 'any')", name="ck_pc_source_lifecycle_policy"),
+    CheckConstraint("revision >= 0", name="ck_pc_source_lifecycle_revision_nonnegative"),
+    CheckConstraint("sequence >= 0", name="ck_pc_source_lifecycle_sequence_nonnegative"),
+)
+
 BUILTIN_TABLES = (
     SCOPE_TABLES
     + SHARED_TABLES
@@ -1187,5 +1206,5 @@ BUILTIN_TABLES = (
     + MEMORY_TABLES
     + STATISTICS_TABLES
     + RECURRENCE_TABLES
-    + (ARTIFACT_TAGS_TABLE, DREAM_RUNS_TABLE, RECEIPT_MIGRATION_REVIEW_TABLE)
+    + (ARTIFACT_TAGS_TABLE, DREAM_RUNS_TABLE, RECEIPT_MIGRATION_REVIEW_TABLE, SOURCE_LIFECYCLE_TABLE)
 )
