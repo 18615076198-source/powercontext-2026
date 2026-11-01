@@ -165,6 +165,7 @@ from powercontext.builtin.sources import (
     BUILTIN_SOURCE_REGISTRY,
     TEXT_EVIDENCE_PROJECTION_KEY,
 )
+from powercontext.builtin.triggers import SOURCE_WINDOW_TRIGGER_NAME
 from powercontext.errors import InvalidSourceProjectionError, SourceProjectionNotFoundError
 from powercontext.sources import Source, SourceDefinitionRegistry, SourceProjectionKey
 
@@ -595,7 +596,19 @@ async def open_builtin_runtime(
                     handoff_generation=contexts.handoff_generation,
                     prompts=dict(contexts.prompt_registry.capabilities),
                 ),
+                database=contexts.database,
                 source_window_limit=config.runtime.source_window_limit,
+                source_count_bindings=tuple(
+                    binding
+                    for binding, threshold in (
+                        (SOURCE_WINDOW_TRIGGER_NAME, config.runtime.memory_source_count_threshold),
+                        (
+                            TOPIC_MEMORY_SOURCE_WINDOW_BINDING,
+                            config.runtime.topic_memory_source_count_threshold,
+                        ),
+                    )
+                    if threshold is not None
+                ),
                 context_assembly_max_entries=config.runtime.context_assembly_max_entries,
                 recall_sufficiency_policy=RecallSufficiencyPolicy.from_runtime_config(config.runtime),
                 scope_cache_size=config.runtime.scope_cache_size,
@@ -719,8 +732,12 @@ def _artifact_processing_bindings(  # noqa: C901 - validate and assemble one reg
         "profile": config.runtime.profile_schedule_enabled or None,
         "skill": None,
     }
+    count_thresholds = {
+        "memory": config.runtime.memory_source_count_threshold,
+        "topic-memory": config.runtime.topic_memory_source_count_threshold,
+    }
     for family, schedule in automatic.items():
-        if schedule is not None and family not in declared | registered:
+        if (schedule is not None or count_thresholds.get(family) is not None) and family not in declared | registered:
             if (
                 family == "topic-memory"
                 and config.runtime.artifact_processing_families is None
@@ -779,6 +796,7 @@ def _artifact_processing_bindings(  # noqa: C901 - validate and assemble one reg
                 max_workers=getattr(config.runtime, f"{prefix}_max_workers"),
                 worker_timeout_seconds=getattr(config.runtime, f"{prefix}_worker_timeout_seconds"),
                 automatic_processing_interval=None if interval is None else timedelta(seconds=float(interval)),
+                automatic_source_count_threshold=count_thresholds.get(family),
                 cron=config.runtime.profile_cron
                 if family == "profile" and config.runtime.profile_schedule_enabled
                 else None,
