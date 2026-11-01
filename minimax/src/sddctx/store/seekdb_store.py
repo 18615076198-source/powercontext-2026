@@ -123,20 +123,40 @@ class SeekdbStore(Store):
             content_hash=str(meta.get("content_hash", "")),
         )
 
+    def _vector_dim(self) -> int:
+        dim = getattr(self._collection, "dimension", None)
+        try:
+            dim = int(dim) if dim is not None else 384
+        except (TypeError, ValueError):
+            dim = 384
+        return dim or 384
+
     def upsert(self, chunks: list[Chunk]) -> int:
         if not chunks:
             return 0
         ids = [chunk.chunk_id for chunk in chunks]
         documents = [chunk.content for chunk in chunks]
         metadatas = [self._metadata(chunk) for chunk in chunks]
+        # seekdb 的集合总带一个稠密向量列：开了 embedding 就让集合自己算，
+        # 关掉 embedding 时写零向量——检索走全文通道（$contains），不依赖向量。
+        embeddings = None
+        if self._embedding is None:
+            embeddings = [[0.0] * self._vector_dim() for _ in chunks]
+        payload = {
+            "ids": ids,
+            "documents": documents,
+            "metadatas": metadatas,
+        }
+        if embeddings is not None:
+            payload["embeddings"] = embeddings
         if hasattr(self._collection, "upsert"):
-            self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+            self._collection.upsert(**payload)
         else:  # pragma: no cover - 老版本兼容
             try:
                 self._collection.delete(ids=ids)
             except Exception:
                 pass
-            self._collection.add(ids=ids, documents=documents, metadatas=metadatas)
+            self._collection.add(**payload)
         # 全文索引是异步构建的，刷一次再返回，保证紧接着的检索能命中
         refresh = getattr(self._collection, "refresh_index", None)
         if callable(refresh):
