@@ -318,6 +318,7 @@ class PreparedContextBuilder:
                 selected = _coalesce_fragments((*selected, shortened))
         if not selected:
             return PreparedContextBuild(context=self.empty())
+        selected = _extend_adjacent(ranked, selected, request.max_bytes)
         fragments = tuple(
             PreparedContextFragment(address=item.address, start=item.start, end=item.end, text=item.text)
             for item in selected
@@ -961,6 +962,41 @@ def _shorten_to_budget(
         else:
             high = middle - 1
     return best
+
+
+def _extend_adjacent(
+    ranked: Sequence[_FragmentCandidate],
+    selected: Sequence[_FragmentCandidate],
+    max_bytes: int,
+) -> list[_FragmentCandidate]:
+    """Spend remaining budget on text adjacent to an already selected interval.
+
+    Evidence often spans neighbouring sentences, and a neighbour needs no extra citation. It
+    can therefore be delivered inside the same item even when it shares no query term, filling
+    bytes that no stand-alone candidate can use. A partial neighbour is admitted only as the
+    last resort of an otherwise unused suffix.
+    """
+
+    current = list(selected)
+    changed = True
+    while changed:
+        changed = False
+        for candidate in ranked:
+            if _overlaps_selected(current, candidate):
+                continue
+            if not any(_adjacent(item, candidate) for item in current):
+                continue
+            trial = _coalesce_fragments((*current, candidate))
+            if _rendered_fragments_bytes(trial) <= max_bytes:
+                current = trial
+                changed = True
+                break
+            shortened = _shorten_to_budget(current, candidate, max_bytes)
+            if shortened is not None:
+                current = _coalesce_fragments((*current, shortened))
+                changed = True
+                break
+    return current
 
 
 def _coalesce_fragments(selected: Sequence[_FragmentCandidate]) -> list[_FragmentCandidate]:
