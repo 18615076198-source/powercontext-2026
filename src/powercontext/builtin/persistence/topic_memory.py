@@ -36,10 +36,12 @@ from powercontext.builtin.artifacts.topic_memory import (
     TopicMemory,
     TopicMemoryBrowseCursor,
     TopicMemoryCapabilityError,
+    TopicMemoryChannelHit,
     TopicMemoryCurrentItem,
     TopicMemoryDraft,
     TopicMemoryProjection,
     TopicMemoryProjectionError,
+    TopicMemorySearchChannels,
     TopicMemorySearchMode,
     TopicMemorySearchRequest,
     TopicMemorySearchResult,
@@ -48,6 +50,7 @@ from powercontext.builtin.artifacts.topic_memory import (
     chunk_topic_memory_detail,
 )
 from powercontext.builtin.artifacts.topic_memory.fusion import _fuse_topic_memory_rankings
+from powercontext.builtin.persistence.artifact_governance import ArtifactLifecycleState
 from powercontext.builtin.persistence.artifacts import ArtifactRepository
 from powercontext.builtin.persistence.errors import InvalidRepositoryArgumentError
 from powercontext.builtin.persistence.supervision import database_utc_now
@@ -66,6 +69,26 @@ from powercontext.builtin.persistence.topic_memory_index import (
     topic_memory_embedding_profile_fingerprint,
 )
 from powercontext.builtin.tags import TagFilter
+
+
+def _visible_channels(channels: TopicMemorySearchChannels, withdrawn: frozenset[str]) -> TopicMemorySearchChannels:
+    """Drop channel hits whose Topic head is no longer active governance-wise."""
+
+    def visible(hits: tuple[TopicMemoryChannelHit, ...]) -> tuple[TopicMemoryChannelHit, ...]:
+        return tuple(hit for hit in hits if hit.artifact_ref.artifact_id not in withdrawn)
+
+    return channels.model_copy(
+        update={
+            "topic_fts": visible(channels.topic_fts),
+            "topic_vector": visible(channels.topic_vector),
+            "detail_fts": visible(channels.detail_fts),
+            "detail_vector": visible(channels.detail_vector),
+            "topic_fts_retrieved": None,
+            "topic_vector_retrieved": None,
+            "detail_fts_retrieved": None,
+            "detail_vector_retrieved": None,
+        }
+    )
 
 
 class TopicMemoryRepository:
@@ -379,6 +402,7 @@ class TopicMemoryRepository:
             .where(
                 TOPIC_MEMORY_ACTIVE_TOPICS_TABLE.c.scope_id == scope_id,
                 TOPIC_MEMORY_ACTIVE_TOPICS_TABLE.c.family == TopicMemory.family,
+                ARTIFACT_HEADS_TABLE.c.lifecycle_state == ArtifactLifecycleState.ACTIVE.value,
             )
         )
         if tag_filter is not None:
@@ -487,6 +511,9 @@ class TopicMemoryRepository:
             admission=admission,
         )
         channels = await self.index.search(connection, scope_id, request)
+        withdrawn = await self._withdrawn_artifact_ids(connection, scope_id)
+        if withdrawn:
+            channels = _visible_channels(channels, withdrawn)
         await self._check_retrieval_shape(connection)
         outcome = _fuse_topic_memory_rankings(query, channels, limit, mode=used_mode, admission=admission)
         return TopicMemorySearchResult(
@@ -500,6 +527,22 @@ class TopicMemoryRepository:
                 rejected=outcome.rejected,
             ),
         )
+
+    async def _withdrawn_artifact_ids(self, connection: AsyncConnection, scope_id: str, /) -> frozenset[str]:
+        """Return Topic artifacts whose governance removed them from current retrieval.
+
+        Exact Arts Revision reads stay available; only current-head search and browsing stop
+        offering a withdrawn Topic, so audit citations keep resolving.
+        """
+
+        rows = await connection.execute(
+            select(ARTIFACT_HEADS_TABLE.c.artifact_id).where(
+                ARTIFACT_HEADS_TABLE.c.scope_id == scope_id,
+                ARTIFACT_HEADS_TABLE.c.family == TopicMemory.family,
+                ARTIFACT_HEADS_TABLE.c.lifecycle_state != ArtifactLifecycleState.ACTIVE.value,
+            )
+        )
+        return frozenset(str(value) for value in rows.scalars())
 
     async def _activate(
         self,
