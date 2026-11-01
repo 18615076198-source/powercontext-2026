@@ -42,16 +42,32 @@ class SeekdbStore(Store):
         settings = self.settings
         host = settings.extra.get("seekdb_host")
         if host:
-            return pyseekdb.Client(
-                host=host,
-                port=int(settings.extra.get("seekdb_port", 2881)),
-                database=settings.seekdb_database,
-                user=settings.extra.get("seekdb_user", "root"),
-                password=settings.extra.get("seekdb_password", ""),
-            )
-        path = Path(settings.seekdb_path)
-        path.mkdir(parents=True, exist_ok=True)
-        return pyseekdb.Client(path=str(path), database=settings.seekdb_database)
+            conn = {
+                "host": host,
+                "port": int(settings.extra.get("seekdb_port", 2881)),
+                "user": settings.extra.get("seekdb_user", "root"),
+                "password": settings.extra.get("seekdb_password", ""),
+            }
+        else:
+            path = Path(settings.seekdb_path)
+            path.mkdir(parents=True, exist_ok=True)
+            conn = {"path": str(path)}
+        self._ensure_database(pyseekdb, conn, settings.seekdb_database)
+        return pyseekdb.Client(database=settings.seekdb_database, **conn)
+
+    @staticmethod
+    def _ensure_database(pyseekdb, conn: dict, database: str) -> None:
+        """首次连接时库还不存在，先用 AdminClient 建库。
+
+        seekdb 的 ``Client`` 只暴露集合操作，建库属于管理接口；``create_database``
+        内部是 ``CREATE DATABASE IF NOT EXISTS``，重复调用安全。失败时不阻断流程，
+        让后续真实错误带着原始堆栈暴露出来。
+        """
+
+        try:
+            pyseekdb.AdminClient(**conn).create_database(database)
+        except Exception as exc:  # pragma: no cover - 依赖真实 seekdb
+            print(f"[seekdb] 建库 {database} 未成功（继续尝试直接使用）：{exc}")
 
     def _make_embedding(self, pyseekdb):
         if self.settings.seekdb_embedding in {"default", "on", "true", "1"}:
@@ -63,7 +79,7 @@ class SeekdbStore(Store):
     def _open_collection(self):
         if self._client.has_collection(COLLECTION_NAME):
             return self._client.get_collection(COLLECTION_NAME, embedding_function=self._embedding)
-        return self._client.create_collection(
+        return self._client.get_or_create_collection(
             name=COLLECTION_NAME, embedding_function=self._embedding
         )
 
@@ -121,6 +137,13 @@ class SeekdbStore(Store):
             except Exception:
                 pass
             self._collection.add(ids=ids, documents=documents, metadatas=metadatas)
+        # 全文索引是异步构建的，刷一次再返回，保证紧接着的检索能命中
+        refresh = getattr(self._collection, "refresh_index", None)
+        if callable(refresh):
+            try:
+                refresh()
+            except Exception:  # pragma: no cover - 1.2.0 及更早为空操作
+                pass
         return len(ids)
 
     def reset(self) -> None:
