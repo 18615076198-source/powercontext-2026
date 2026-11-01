@@ -67,6 +67,7 @@ from powercontext.builtin.runtime.processing_contracts import (
     ArtifactProcessingWorkerOutcome,
     WorkerEntrypoint,
 )
+from powercontext.builtin.runtime.processing_discovery import pending_source_counts
 from powercontext.builtin.runtime.protocols import RuntimeTracing
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,9 @@ _CHANNEL_QUEUE_LIMIT = _DISCOVERY_PAGE_SIZE // 2
 _DISCOVERY_PAGE_DELAY_SECONDS = 0.01
 _DISCOVERY_TIMEOUT_SECONDS = 2.0
 _SPAWN_SIGTERM_GRACE_SECONDS = 1.0
+# A journal write does not always flow through the Runtime (server-side lineage Sources,
+# imports, projections), so a count-triggered Family re-checks its count on a bounded tick.
+_COUNT_POLL_SECONDS = 1.0
 _WORKER_SHUTDOWN_TIMEOUT_SECONDS = 5.0
 ProcessingKey = tuple[str, str]
 
@@ -100,6 +104,11 @@ class ArtifactProcessingPendingProvider(Protocol):
         ...
 
 
+def _require_count_threshold(value: int | None) -> None:
+    if value is not None and (type(value) is not int or value < 1):
+        raise ValueError("automatic source count threshold must be a positive integer")  # noqa: TRY003
+
+
 @dataclass(frozen=True, slots=True)
 class ArtifactProcessingBinding:
     """Startup registration of one Family and its independently budgeted Worker."""
@@ -110,6 +119,10 @@ class ArtifactProcessingBinding:
     max_workers: int = 1
     worker_timeout_seconds: float = 600.0
     automatic_processing_interval: timedelta | None = None
+    # Count admission complements the wall-clock schedule: when set, a Scope is admitted
+    # automatically once it has this many unconsumed journal entries after its last
+    # successful cursor. One accepted call still only consumes one configured window.
+    automatic_source_count_threshold: int | None = None
     cron: str | None = None
     timezone: str = "Asia/Shanghai"
     config_prefix: str | None = None
@@ -136,6 +149,7 @@ class ArtifactProcessingBinding:
                 raise ValueError("automatic interval must be positive")  # noqa: TRY003
             if self.cron is not None:
                 raise ValueError("interval and cron cannot both be enabled")  # noqa: TRY003
+        _require_count_threshold(self.automatic_source_count_threshold)
         if self.cron is not None:
             CronTrigger.from_crontab(self.cron, timezone=ZoneInfo(self.timezone))
 
@@ -395,6 +409,7 @@ class _FamilyState:
     scan_after: int = 0
     scan_generation: int = 0
     scan_in_progress: bool = False
+    scan_count_gated: bool = False
     reconcile_after: str | None = None
     reconcile_complete: bool = False
     notification_at_start: int = 0
@@ -700,6 +715,8 @@ class ArtifactProcessingSupervisor:
 
     async def _discover_automatic(self, state: _FamilyState) -> None:  # noqa: C901 - bounded admission state
         binding = state.binding
+        threshold = binding.automatic_source_count_threshold
+        scheduled = binding.automatic_processing_interval is not None or binding.cron is not None
         capacity = self._fresh_capacity(state)
         if capacity <= 0:
             return
@@ -709,14 +726,14 @@ class ArtifactProcessingSupervisor:
         scan_after = state.scan_after
         scan_generation = state.scan_generation
         scan_in_progress = False
+        scan_count_gated = state.scan_count_gated
         next_schedule_at = state.next_schedule_at
         next_discovery_at = state.next_discovery_at
         admitted: list[str] = []
         async with self._database.transaction() as connection:
             await self._leases.require_fence(connection, self._require_current_fence())
             persisted = await self._binding_states.load(connection, binding.binding_name, for_update=True)
-            enabled = binding.automatic_processing_interval is not None or binding.cron is not None
-            if not enabled:
+            if not scheduled and threshold is None:
                 if persisted is not None and persisted.scan_in_progress:
                     await self._binding_states.finish_scan(connection, binding.binding_name)
                 next_schedule_at = None
@@ -725,11 +742,27 @@ class ArtifactProcessingSupervisor:
                 now = await database_utc_now(connection)
                 if persisted is None or not persisted.scan_in_progress:
                     checkpoint = None if persisted is None else persisted.last_schedule_checkpoint_at
-                    due, next_time = _schedule_deadline(binding, checkpoint, now)
-                    next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
+                    # Count admission is OR-ed with the wall-clock schedule: a due schedule
+                    # admits every dirty Scope, while an otherwise count-gated pass admits only
+                    # Scopes that reached the threshold. A Family configured with a count
+                    # threshold and no schedule has no timer at all; capture or a finished
+                    # window wakes it, and each pass opens one bounded count scan.
+                    if scheduled:
+                        due, next_time = _schedule_deadline(binding, checkpoint, now)
+                        next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
+                        count_gated = threshold is not None and due is None
+                        if count_gated:
+                            due = now
+                    else:
+                        due = now
+                        count_gated = True
+                        next_schedule_at = None
                     if due is not None:
-                        persisted = await self._binding_states.start_scan(connection, binding.binding_name, due)
+                        persisted = await self._binding_states.start_scan(
+                            connection, binding.binding_name, checkpoint if count_gated else due
+                        )
                         scan_after = 0
+                        scan_count_gated = count_gated
                 if persisted is not None and persisted.scan_in_progress:
                     scan_in_progress = True
                     if scan_generation != persisted.scan_generation:
@@ -752,6 +785,9 @@ class ArtifactProcessingSupervisor:
                         and row.last_auto_scan_generation != persisted.scan_generation
                     )
                     eligible = frozenset(candidates)
+                    if candidates and scan_count_gated and threshold is not None:
+                        counts = await pending_source_counts(connection, binding.binding_name, candidates)
+                        eligible = frozenset(scope for scope in candidates if counts.get(scope, 0) >= threshold)
                     if candidates and binding.automatic_scope_filter is not None:
                         eligible &= await binding.automatic_scope_filter(connection, candidates)
                     for row in rows:
@@ -768,15 +804,21 @@ class ArtifactProcessingSupervisor:
                     if not scan_in_progress:
                         await self._binding_states.finish_scan(connection, binding.binding_name)
                         scan_after = 0
-                        # Starting a scan established its checkpoint, so a
-                        # completed page must not restart the interval here.
-                        _, next_time = _schedule_deadline(binding, persisted.last_schedule_checkpoint_at, now)
-                        next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
+                        if scheduled:
+                            # Starting a scan established its checkpoint, so a
+                            # completed page must not restart the interval here.
+                            _, next_time = _schedule_deadline(binding, persisted.last_schedule_checkpoint_at, now)
+                            next_schedule_at = asyncio.get_running_loop().time() + max(
+                                0, (next_time - now).total_seconds()
+                            )
+                        else:
+                            next_schedule_at = None
                     else:
                         next_discovery_at = asyncio.get_running_loop().time() + _DISCOVERY_PAGE_DELAY_SECONDS
         state.scan_after = scan_after
         state.scan_generation = scan_generation
         state.scan_in_progress = scan_in_progress
+        state.scan_count_gated = scan_count_gated
         state.next_schedule_at = next_schedule_at
         state.next_discovery_at = next_discovery_at
         for scope in admitted:
@@ -1093,6 +1135,8 @@ class ArtifactProcessingSupervisor:
                 continue
             if state.next_schedule_at is not None:
                 deadlines.append(state.next_schedule_at)
+            if state.binding.automatic_source_count_threshold is not None and not state.scan_in_progress:
+                deadlines.append(now + _COUNT_POLL_SECONDS)
             if state.discovery_pending or state.scan_in_progress or not state.reconcile_complete or state.degraded:
                 deadlines.append(max(now, state.next_discovery_at))
         return None if not deadlines else max(0.001, min(deadlines) - now)
