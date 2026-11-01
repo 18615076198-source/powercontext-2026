@@ -119,6 +119,15 @@ class RuntimeConfig(BaseModel):
                 normalized[old] = normalized[new]
         return normalized
 
+    @field_validator("memory_source_count_threshold", "topic_memory_source_count_threshold", mode="before")
+    @classmethod
+    def validate_source_count_threshold(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if type(value) is not int or value <= 0:
+            raise ValueError("Source count threshold must be a positive integer or null")  # noqa: TRY003
+        return value
+
     @field_validator(
         "memory_max_workers",
         "topic_memory_max_workers",
@@ -200,6 +209,12 @@ class RuntimeConfig(BaseModel):
         return self
 
     schedule_seconds: float | None = Field(default=None, gt=0)
+    # Count admission: when set, a Family starts one ordinary processing call as soon as
+    # this many unconsumed journal entries exist after its last successful cursor. It is
+    # OR-ed with the wall-clock schedule above and complements, not replaces, the window
+    # limits that bound one call.
+    memory_source_count_threshold: int | None = None
+    topic_memory_source_count_threshold: int | None = None
     memory_schedule_seconds: float | None = Field(default=None, gt=0)
     experience_schedule_seconds: float | None = Field(default=None, gt=0)
     dream_enabled: bool = True
