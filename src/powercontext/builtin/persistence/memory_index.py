@@ -200,6 +200,7 @@ class CompositeMemoryIndex:
             hybrid=fts and bool(vector_indexes),
             embedding_profile=profile,
             tag_filter=all(index.capabilities.tag_filter for index in indexes),
+            native_hybrid=any(index.capabilities.native_hybrid for index in indexes),
         )
         self.tables = tuple(table for index in indexes for table in index.tables)
 
@@ -247,6 +248,11 @@ class CompositeMemoryIndex:
         request: MemorySearchRequest,
         /,
     ) -> MemorySearchChannels:
+        if request.mode == "hybrid":
+            native = next((index for index in self.indexes if index.capabilities.native_hybrid), None)
+            if native is not None:
+                # One native statement already returns both ordered candidate channels.
+                return await native.search(connection, scope_id, request)
         fts: tuple[MemoryChannelHit, ...] = ()
         vector: tuple[MemoryChannelHit, ...] = ()
         for index in self.indexes:
