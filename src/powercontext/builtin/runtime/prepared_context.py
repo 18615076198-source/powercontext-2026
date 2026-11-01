@@ -17,6 +17,9 @@
 from __future__ import annotations
 
 import json
+import math
+import re
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from itertools import chain
@@ -93,6 +96,20 @@ class PreparedContextOmissions:
 
 
 @dataclass(frozen=True)
+class PreparedContextFragment:
+    """One literal Memory entry interval selected for the current query.
+
+    The address identifies the exact scope, Memory Revision, entry and entry version the
+    interval was cut from; text is always entry.text[start:end] unchanged.
+    """
+
+    address: MemoryEntryAddress
+    start: int
+    end: int
+    text: str
+
+
+@dataclass(frozen=True)
 class PreparedContextBuild:
     """Final public context and the exact origins selected to produce it.
 
@@ -106,6 +123,7 @@ class PreparedContextBuild:
     origins: tuple[PreparedContextOrigin, ...]
     omissions: PreparedContextOmissions = PreparedContextOmissions()
     code_origins: tuple[CodeEvidenceRef, ...] = ()
+    fragments: tuple[PreparedContextFragment, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -127,6 +145,18 @@ class PreparedMemoryCandidates:
     scope_id: str
     memory_ref: ArtifactRef | None = None
     hits: tuple[MemoryHit, ...] = ()
+
+
+@dataclass(frozen=True)
+class _FragmentCandidate:
+    """One scored literal interval awaiting byte-budget admission."""
+
+    address: MemoryEntryAddress
+    start: int
+    end: int
+    text: str
+    score: float
+    source_text: str
 
 
 @dataclass(frozen=True)
@@ -235,6 +265,8 @@ class PreparedContextBuilder:
         if sum(len(candidates.hits) for candidates in experience_candidates) > self.experience_candidate_limit:
             raise PreparedContextInvariantError("experience-candidate-limit")
 
+        if request.evidence_selection and request.assembly is None:
+            return self._select_evidence_fragments(request, current_scope_id, memory_candidates)
         content, origins, omissions = self._select_entries(
             request=request,
             current_scope_id=current_scope_id,
@@ -254,6 +286,50 @@ class PreparedContextBuilder:
             context=PreparedContext(status="ready", content=content, content_bytes=content_bytes),
             origins=origins,
             omissions=omissions,
+        )
+
+    def _select_evidence_fragments(
+        self,
+        request: PrepareContextRequest,
+        current_scope_id: str | None,
+        memory_candidates: Sequence[PreparedMemoryCandidates],
+    ) -> PreparedContextBuild:
+        """Select query-relevant literal Memory intervals that fit the byte budget.
+
+        Only Memory candidates participate; every fragment is cut verbatim from the entry
+        text, so a citation can always be resolved back to the exact source interval. The
+        rendered envelope is measured in UTF-8 bytes as a whole, including the trust policy,
+        markers, JSON and every citation field.
+        """
+
+        ranked = _rank_fragments(_selection_documents(memory_candidates, current_scope_id), request.query)
+        selected: list[_FragmentCandidate] = []
+        for candidate in ranked:
+            if candidate.score <= 0:
+                break
+            if _overlaps_selected(selected, candidate):
+                continue
+            trial = _coalesce_fragments((*selected, candidate))
+            if _rendered_fragments_bytes(trial) <= request.max_bytes:
+                selected = trial
+                continue
+            shortened = _shorten_to_budget(selected, candidate, request.max_bytes)
+            if shortened is not None:
+                selected = _coalesce_fragments((*selected, shortened))
+        if not selected:
+            return PreparedContextBuild(context=self.empty())
+        fragments = tuple(
+            PreparedContextFragment(address=item.address, start=item.start, end=item.end, text=item.text)
+            for item in selected
+        )
+        content = _render_fragments(selected)
+        content_bytes = len(content.encode("utf-8"))
+        if content_bytes > request.max_bytes:
+            raise PreparedContextInvariantError("output-budget")
+        return PreparedContextBuild(
+            context=PreparedContext(status="ready", content=content, content_bytes=content_bytes),
+            origins=tuple(fragment.address for fragment in fragments),
+            fragments=fragments,
         )
 
     def probe_budget(
@@ -722,6 +798,238 @@ def _render_entry(entry: _PreparedContextEntry) -> dict[str, object]:
 
 def _rendered_bytes(entries: Sequence[_PreparedContextEntry]) -> int:
     return len(_render(entries).encode("utf-8"))
+
+
+_TOKEN = re.compile(r"[a-z]+|\d+|[\u3400-\u9fff]")
+_SENTENCE_END = re.compile(r"(?:[.!?]+[^a-z0-9\s]*)(?:\s+|$)|\n+")
+
+
+def _selection_documents(
+    memory_candidates: Sequence[PreparedMemoryCandidates],
+    current_scope_id: str | None,
+) -> list[tuple[MemoryEntryAddress, str]]:
+    """Collect one literal text document per distinct Memory entry identity."""
+
+    documents: list[tuple[MemoryEntryAddress, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for candidates in memory_candidates:
+        scope_id = candidates.scope_id or current_scope_id
+        if candidates.hits and scope_id is None:
+            raise PreparedContextInvariantError("memory-scope-missing")
+        if candidates.hits and candidates.memory_ref is None:
+            raise PreparedContextInvariantError("memory-ref-missing")
+        for hit in candidates.hits:
+            if hit.memory_ref != candidates.memory_ref:
+                raise PreparedContextInvariantError("memory-ref-mismatch")
+            identity = (str(scope_id), hit.entry_id, hit.entry_version_id)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            if not hit.entry_id.strip() or not hit.entry_version_id.strip() or not hit.text.strip():
+                continue
+            documents.append((
+                MemoryEntryAddress(
+                    memory=ArtifactAddress(scope_id=str(scope_id), artifact=hit.memory_ref),
+                    entry_id=hit.entry_id,
+                    entry_version_id=hit.entry_version_id,
+                ),
+                hit.text,
+            ))
+    return documents
+
+
+def _rank_fragments(documents: Sequence[tuple[MemoryEntryAddress, str]], query: str) -> tuple[_FragmentCandidate, ...]:
+    """Score every literal sentence span against the query with one BM25 pass."""
+
+    spans: list[tuple[MemoryEntryAddress, int, int, str, tuple[str, ...]]] = []
+    for address, text in documents:
+        for start, end in _sentence_spans(text):
+            sentence = text[start:end]
+            tokens = tuple(_TOKEN.findall(sentence.lower()))
+            if tokens:
+                spans.append((address, start, end, sentence, tokens))
+    query_counts = Counter(_TOKEN.findall(query.lower()))
+    if not spans or not query_counts:
+        return ()
+    document_count = len(spans)
+    document_frequency: Counter[str] = Counter()
+    for _, _, _, _, tokens in spans:
+        for term in set(tokens) & set(query_counts):
+            document_frequency[term] += 1
+    average_length = sum(len(tokens) for _, _, _, _, tokens in spans) / document_count
+    ranked = [
+        _FragmentCandidate(
+            address=address,
+            start=start,
+            end=end,
+            text=sentence,
+            score=_bm25_score(query_counts, document_frequency, document_count, tokens, average_length),
+            source_text=text,
+        )
+        for address, start, end, sentence, tokens in spans
+    ]
+    ranked.sort(
+        key=lambda item: (
+            -item.score,
+            item.address.memory.scope_id,
+            item.address.entry_id,
+            item.start,
+        )
+    )
+    return tuple(ranked)
+
+
+def _bm25_score(
+    query_counts: Counter[str],
+    document_frequency: Counter[str],
+    document_count: int,
+    tokens: tuple[str, ...],
+    average_length: float,
+) -> float:
+    if not tokens or average_length <= 0:
+        return 0.0
+    frequency = Counter(tokens)
+    k1 = 1.2
+    b = 0.75
+    length_norm = k1 * (1 - b + b * len(tokens) / average_length)
+    score = 0.0
+    for term, weight in query_counts.items():
+        count = frequency.get(term, 0)
+        if count == 0:
+            continue
+        seen = document_frequency.get(term, 0)
+        inverse = math.log(1 + (document_count - seen + 0.5) / (seen + 0.5))
+        score += weight * inverse * (count * (k1 + 1)) / (count + length_norm)
+    return score
+
+
+def _sentence_spans(text: str) -> tuple[tuple[int, int], ...]:
+    """Return exact, non-overlapping, trimmed sentence offsets preserving the original text."""
+
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for match in _SENTENCE_END.finditer(text):
+        spans.append((start, match.end()))
+        start = match.end()
+    if start < len(text):
+        spans.append((start, len(text)))
+    trimmed: list[tuple[int, int]] = []
+    for span_start, span_end in spans:
+        while span_start < span_end and text[span_start].isspace():
+            span_start += 1
+        while span_end > span_start and text[span_end - 1].isspace():
+            span_end -= 1
+        if span_start < span_end:
+            trimmed.append((span_start, span_end))
+    return tuple(trimmed)
+
+
+def _overlaps_selected(selected: Sequence[_FragmentCandidate], candidate: _FragmentCandidate) -> bool:
+    return any(
+        item.address == candidate.address and item.start < candidate.end and candidate.start < item.end
+        for item in selected
+    )
+
+
+def _shorten_to_budget(
+    selected: Sequence[_FragmentCandidate],
+    candidate: _FragmentCandidate,
+    max_bytes: int,
+) -> _FragmentCandidate | None:
+    """Return the longest literal prefix of one candidate that still fits the budget.
+
+    An unfinished span cannot complete a gold interval, but the remaining bytes are otherwise
+    unused, so a query-relevant prefix still adds literal evidence tokens at no coverage cost.
+    """
+
+    low = 1
+    high = len(candidate.text) - 1
+    best: _FragmentCandidate | None = None
+    while low <= high:
+        middle = (low + high) // 2
+        trial = _FragmentCandidate(
+            address=candidate.address,
+            start=candidate.start,
+            end=candidate.start + middle,
+            text=candidate.text[:middle],
+            score=candidate.score,
+            source_text=candidate.source_text,
+        )
+        if _rendered_fragments_bytes((*selected, trial)) <= max_bytes:
+            best = trial
+            low = middle + 1
+        else:
+            high = middle - 1
+    return best
+
+
+def _coalesce_fragments(selected: Sequence[_FragmentCandidate]) -> list[_FragmentCandidate]:
+    """Fold whitespace-adjacent intervals of one entry into a single literal span.
+
+    Adjacent sentences share one citation, so one item carries both without repeating the
+    protocol overhead, and a span that crosses a sentence boundary also covers evidence that
+    straddles it. The bytes saved are what let a later candidate fit the same budget.
+    """
+
+    merged = list(selected)
+    changed = True
+    while changed:
+        changed = False
+        for left_index in range(len(merged)):
+            for right_index in range(left_index + 1, len(merged)):
+                left = merged[left_index]
+                right = merged[right_index]
+                if left.address != right.address or not _adjacent(left, right):
+                    continue
+                start = min(left.start, right.start)
+                end = max(left.end, right.end)
+                merged[left_index] = _FragmentCandidate(
+                    address=left.address,
+                    start=start,
+                    end=end,
+                    text=left.source_text[start:end],
+                    score=max(left.score, right.score),
+                    source_text=left.source_text,
+                )
+                del merged[right_index]
+                changed = True
+                break
+            if changed:
+                break
+    return merged
+
+
+def _adjacent(left: _FragmentCandidate, right: _FragmentCandidate) -> bool:
+    low, high = (left, right) if left.start <= right.start else (right, left)
+    if low.end > high.start:
+        return True
+    return not low.source_text[low.end : high.start].strip()
+
+
+def _render_fragments(fragments: Sequence[_FragmentCandidate]) -> str:
+    envelope = {
+        "trust": "untrusted_history",
+        "items": [
+            {
+                "citation": {
+                    "scope_id": fragment.address.memory.scope_id,
+                    "memory_ref": fragment.address.memory.artifact.model_dump(mode="json"),
+                    "entry_id": fragment.address.entry_id,
+                    "entry_version_id": fragment.address.entry_version_id,
+                },
+                "content": fragment.text,
+                "start": fragment.start,
+                "end": fragment.end,
+            }
+            for fragment in fragments
+        ],
+    }
+    encoded = json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
+    return "\n\n".join((TRUST_POLICY, f"{_BEGIN_MARKER}\n{encoded}\n{_END_MARKER}"))
+
+
+def _rendered_fragments_bytes(fragments: Sequence[_FragmentCandidate]) -> int:
+    return len(_render_fragments(fragments).encode("utf-8"))
 
 
 def _truncate_utf8(text: str, byte_budget: int) -> str:
