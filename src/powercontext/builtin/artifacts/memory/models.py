@@ -68,6 +68,9 @@ class MemoryCapabilities(BaseModel):
     hybrid: bool = False
     tag_filter: bool = False
     embedding_profile: EmbeddingProfile | None = None
+    # The backend resolves both candidate channels in one native statement, so hybrid
+    # search does not need one FTS query plus one vector query.
+    native_hybrid: bool = False
 
 
 class MemoryManifestEntry(BaseModel):
