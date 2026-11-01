@@ -166,6 +166,10 @@ from powercontext.builtin.runtime._scope_cache import (
     ScopeCacheObserver,
     ScopeEvictor,
 )
+from powercontext.builtin.runtime.context_pack import (
+    ContextPack,
+    ContextPackDelta,
+)
 from powercontext.builtin.runtime.decision_model import DecisionModel
 from powercontext.builtin.runtime.errors import InvalidRuntimeRequestError, TopicMemoryProcessingUnavailableError
 from powercontext.builtin.runtime.models import (
@@ -846,6 +850,34 @@ class ScopedContextApplication:
             if authorize_scopes is not None:
                 await authorize_scopes((self.scope_id, *scope.context_references))
             return await self._prepare(request, scope)
+
+    async def prepare_incremental(
+        self,
+        request: PrepareContextRequest,
+        /,
+        *,
+        base_pack: ContextPack | None = None,
+        authorize_scopes: Callable[[tuple[str, ...]], Awaitable[None]] | None = None,
+    ) -> ContextPack | ContextPackDelta:
+        """Prepare this scope as a complete context pack, or as a delta against a base pack.
+
+        Without a base pack the response is the complete ContextPack; with one it is the
+        ContextPackDelta that carries only the items the base cannot supply. The receiving side
+        rebuilds the target from serialized bytes alone, so the delta names the base by digest
+        instead of sharing any process state. An empty prepared context (content=None) travels
+        as the empty pack.
+        """
+
+        if base_pack is not None and not isinstance(base_pack, ContextPack):
+            raise TypeError("base_pack must be a ContextPack")  # noqa: TRY003
+        prepared = await self.prepare(request, authorize_scopes=authorize_scopes)
+        # A finer chunk keeps the appended suffix close to the bytes that actually changed:
+        # the per-delta overhead is a few protocol fields, while a coarse chunk re-sends up
+        # to one full chunk of unchanged tail on every round.
+        target = ContextPack.from_content(prepared.content or "", chunk_bytes=128)
+        if base_pack is None:
+            return target
+        return ContextPackDelta.between(base_pack, target)
 
     async def _prepare(self, request: PrepareContextRequest, scope: ScopeDescriptor, /) -> PreparedContext:
         build, effort = await self._prepare_build(request, scope)
