@@ -92,7 +92,8 @@ def cmd_doctor(args) -> int:
     print(f"MiniMax    : {settings.minimax_base_url} / {settings.minimax_model} / key={'已配置' if settings.minimax_api_key else '缺失'}")
     store = make_store(settings)
     print(f"存储状态   : {json.dumps(store.backend_info(), ensure_ascii=False)}")
-    client = PowerContextClient(settings, trace)
+    # 自检阶段还没有 run_dir，不挂 trace
+    client = PowerContextClient(settings)
     health = client.health()
     print(f"PowerContext: {settings.powercontext_url} -> {health.get('status')}")
     if health.get("status") != "ready":
@@ -104,7 +105,7 @@ def cmd_doctor(args) -> int:
 def cmd_import(args) -> int:
     settings = Settings.load()
     task, project_root, run_dir = load_task(args.task)
-    trace = Trace(run_dir / "trace.jsonl")
+    trace = Trace(run_dir / "trace.jsonl", reset=bool(args.reset))
     store = make_store(settings)
     if args.reset:
         store.reset()

@@ -116,6 +116,8 @@ class MiniMaxClient:
             "max_tokens": max_tokens,
             # 代码补丁较长，用流式接收避免长连接静默超时被中间设备重置
             "stream": True,
+            # 让流式响应末尾带回 usage，便于记录 token 消耗
+            "stream_options": {"include_usage": True},
         }
         body = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(

@@ -29,8 +29,8 @@
       "src/billing/report.py"
     ],
     "patch": "runs/task-001-report-region-filter/change.patch",
-    "diff_lines": 80
+    "diff_lines": 89
   },
-  "updated_at": "2026-11-01T07:24:14+00:00",
-  "revision": 1
+  "updated_at": "2026-11-01T07:31:39+00:00",
+  "revision": 3
 }

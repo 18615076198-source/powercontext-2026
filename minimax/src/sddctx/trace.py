@@ -15,9 +15,12 @@ class Trace:
     ``powercontext``（任务状态读写），全部带耗时与结果摘要。
     """
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, reset: bool = False) -> None:
         self.path = path
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        if reset and self.path.exists():
+            # 从头复现时清掉旧轨迹，保证 trace 只反映本次运行
+            self.path.unlink()
         self.path.touch(exist_ok=True)
         self.events: list[dict] = []
 

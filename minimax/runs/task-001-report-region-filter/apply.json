@@ -5,21 +5,21 @@
     "src/billing/report.py"
   ],
   "file_hashes": {
-    "src/billing/report.py": "5992ac9fcaf76dafa5f3af5b3ed9c6e012600f4d700f944248572cc515082a1f"
+    "src/billing/report.py": "9da83fbc89eb5c5e8f597aa7222e619f95d9943b9cf6fd1782444b965a57405f"
   },
-  "diff_lines": 80,
+  "diff_lines": 89,
   "minimax": {
     "model": "MiniMax-M3.1-Flash",
     "base_url": "https://api.minimaxi.com/v1",
-    "latency_ms": 19907,
-    "prompt_tokens": 0,
-    "completion_tokens": 0,
-    "request_id": "07361b71ab8f25e085e727d6e7d9c264",
+    "latency_ms": 51005,
+    "prompt_tokens": 4013,
+    "completion_tokens": 4557,
+    "request_id": "07361da5eeae1eb558b888c40d3dfc88",
     "prompt_chars": 11991,
-    "response_chars": 3729,
+    "response_chars": 3866,
     "attempt": 1,
     "error": ""
   },
-  "model_output_chars": 3729,
-  "at": "2026-11-01T07:21:40+00:00"
+  "model_output_chars": 3866,
+  "at": "2026-11-01T07:31:35+00:00"
 }
