@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # 一键复现：从 v1 规格出发，走完「找规格 → 改规格 → 找代码 → 改代码 → 验证 → 存状态 → 接着干」。
 set -euo pipefail
-cd "$(dirname "$0")"
+# Git Bash 的 pwd 是 /c/... 形式，Windows 上的 Python 无法识别，优先用 pwd -W
+HERE="$(cd "$(dirname "$0")" && { pwd -W 2>/dev/null || pwd; })"
+cd "$HERE"
 
-export PYTHONPATH="${PYTHONPATH:-}:src"
+export PYTHONPATH="$HERE/src${PYTHONPATH:+$(case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) echo ';';; *) echo ':';; esac)$PYTHONPATH}"
 PY="${PYTHON:-python}"
 TASK="samples/task-001-report-region-filter/task.json"
 

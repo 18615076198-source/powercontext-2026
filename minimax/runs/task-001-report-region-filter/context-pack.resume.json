@@ -1,0 +1,410 @@
+{
+  "schema": "sdd-context-pack.v1",
+  "task_id": "task-001-report-region-filter",
+  "task_title": "月度报表支持按销售区域过滤",
+  "request": "月度结算报表需要支持按销售区域（region）过滤：运营同学只导出某个区域的订单，并且区域维度也要在报表里汇总。要求：①新增 region 参数，不传时行为与现在完全一致；②region 与已有 currency 过滤可以叠加；③报表结果里增加按区域的金额汇总，只统计过滤后的订单；④区域名输入要容忍前后空格和大小写差异；⑤传入不存在的区域时返回空报表而不是报错。",
+  "generated_at": "2026-11-01T07:24:15+00:00",
+  "query": "月度报表支持按销售区域过滤 月度结算报表需要支持按销售区域（region）过滤：运营同学只导出某个区域的订单，并且区域维度也要在报表里汇总。要求：①新增 region 参数，不传时行为与现在完全一致；②region 与已有 currency 过滤可以叠加；③报表结果里增加按区域的金额汇总，只统计过滤后的订单；④区域名输入要容忍前后空格和大小写差异；⑤传入不存在的区域时返回空报表而不是报错。 既有币种过滤语义不变：None 不过滤、未知币种返回空报表、空白入参抛 ValueError 汇总口径不变：仍按币种分组累加应付金额，禁止混币 明细行仍按 order_id 升序 取消/退款订单仍不得计入 BR-REPORT-02 BR-REPORT-03 BR-REPORT-04 BR-REPORT-01",
+  "store": {
+    "backend": "sqlite",
+    "path": "C:\\Users\\ASUS\\WorkBuddy\\2026-11-01-11-00-46\\pc\\minimax\\.sddctx\\sddctx.db",
+    "chunks": {
+      "code": 21,
+      "spec": 17,
+      "test": 25
+    }
+  },
+  "specs": [
+    {
+      "id": "spec:BR-REPORT-05",
+      "kind": "spec",
+      "path": "specs/02-report.md",
+      "symbol": "BR-REPORT-05",
+      "title": "区域过滤",
+      "line_start": 38,
+      "line_end": 49,
+      "content_hash": "8a10dd2f51c7065f145d191528afb5e1787a3b9e2445f9b8a56b47098b190dc1",
+      "relevance": 999.0,
+      "why": "任务锚点 BR-REPORT-05",
+      "spec_id": "BR-REPORT-05",
+      "file_exists": true,
+      "file_hash": "86542bf6b0ee192158623058c213ed27cc95c0a2a4d2bfe9ea3fa4a77429b562",
+      "content": "## BR-REPORT-05 区域过滤\n\n- 优先级：必须\n- 适用接口：`billing.report.build_monthly_report(region=...)`\n- 规则：\n  - 新增关键字参数 `region: str | None = None`，必须带默认值 `None`，保证既有调用方式不受影响。\n  - `region=None` 表示不限区域。\n  - 传入区域时与订单 `region` 比较，双方都先 `strip()` 再 `casefold()`，即去空白且大小写不敏感。\n  - 入参 `strip()` 后为空字符串时抛 `ValueError`。\n  - 过滤后无订单时返回空报表（`order_count == 0`、`totals_by_currency == {}`、`totals_by_region == {}`、`rows == ()`），不抛异常。\n- 验证：`test_acceptance_report_region.py::test_region_filter_selects_matching_orders`、`::test_region_filter_is_trimmed_and_case_insensitive`、`::test_unknown_region_returns_empty_report`、`::test_blank_region_raises_value_error`"
+    },
+    {
+      "id": "spec:BR-REPORT-06",
+      "kind": "spec",
+      "path": "specs/02-report.md",
+      "symbol": "BR-REPORT-06",
+      "title": "过滤条件组合语义",
+      "line_start": 50,
+      "line_end": 56,
+      "content_hash": "60be3cc0b83db39f8b7412b9a83d9190673d02a60a72b0c30828086a9c25df42",
+      "relevance": 999.0,
+      "why": "任务锚点 BR-REPORT-06",
+      "spec_id": "BR-REPORT-06",
+      "file_exists": true,
+      "file_hash": "86542bf6b0ee192158623058c213ed27cc95c0a2a4d2bfe9ea3fa4a77429b562",
+      "content": "## BR-REPORT-06 过滤条件组合语义\n\n- 优先级：必须\n- 适用接口：`billing.report.build_monthly_report(currency=..., region=...)`\n- 规则：`currency` 与 `region` 同时给出时取交集（AND），先按 `BR-REPORT-01` 的范围筛选，再依次应用两个过滤条件，顺序不影响结果。\n- 验证：`test_acceptance_report_region.py::test_region_and_currency_filters_combine`"
+    },
+    {
+      "id": "spec:BR-REPORT-07",
+      "kind": "spec",
+      "path": "specs/02-report.md",
+      "symbol": "BR-REPORT-07",
+      "title": "区域汇总",
+      "line_start": 57,
+      "line_end": 67,
+      "content_hash": "adced94d3cac8803db3f92c1466395642876a1342d8e3dbc7b2640c270422429",
+      "relevance": 999.0,
+      "why": "任务锚点 BR-REPORT-07",
+      "spec_id": "BR-REPORT-07",
+      "file_exists": true,
+      "file_hash": "86542bf6b0ee192158623058c213ed27cc95c0a2a4d2bfe9ea3fa4a77429b562",
+      "content": "## BR-REPORT-07 区域汇总\n\n- 优先级：必须\n- 适用接口：`billing.report.MonthlyReport.totals_by_region`\n- 规则：\n  - `MonthlyReport` 新增字段 `totals_by_region: dict[str, int]`，默认空字典，键为区域名、值为该区域内应付金额合计（分）。\n  - 只统计 **过滤后** 的订单；未应用 `region` 过滤时按订单自带的区域分组。\n  - 键使用订单 `region` 去首尾空白后的原文，不做大小写归一，避免静默改写业务名称。\n  - `to_dict()` 输出中必须包含 `totals_by_region`，且键按字典序排列。\n- 验证：`test_acceptance_report_region.py::test_totals_by_region_only_counts_filtered_orders`、`::test_totals_by_region_keys_are_trimmed`"
+    },
+    {
+      "id": "spec:BR-REPORT-02",
+      "kind": "spec",
+      "path": "specs/02-report.md",
+      "symbol": "BR-REPORT-02",
+      "title": "币种过滤",
+      "line_start": 13,
+      "line_end": 23,
+      "content_hash": "58e22af1468c9144902c7c6949c83c45def165e568c9de4380adf2a0decf95be",
+      "relevance": 998.0,
+      "why": "必须保持的既有行为 BR-REPORT-02",
+      "spec_id": "BR-REPORT-02",
+      "file_exists": true,
+      "file_hash": "86542bf6b0ee192158623058c213ed27cc95c0a2a4d2bfe9ea3fa4a77429b562",
+      "content": "## BR-REPORT-02 币种过滤\n\n- 优先级：必须\n- 适用接口：`billing.report.build_monthly_report(currency=...)`\n- 规则：\n  - `currency=None` 表示不限币种，返回该月全部已支付订单。\n  - 传入币种时按 ISO-4217 代码匹配，比较前对入参与订单币种都做 `strip().upper()`。\n  - 入参为纯空白字符串时抛 `ValueError`，不允许静默当作不过滤。\n  - 过滤后没有任何订单时，返回 `order_count == 0`、`totals_by_currency == {}`、`rows == ()` 的空报表，不抛异常。\n- 验证：`tests/test_report.py::test_currency_filter`、`tests/test_report.py::test_unknown_currency_returns_empty_report`"
+    },
+    {
+      "id": "spec:BR-REPORT-03",
+      "kind": "spec",
+      "path": "specs/02-report.md",
+      "symbol": "BR-REPORT-03",
+      "title": "金额汇总口径",
+      "line_start": 24,
+      "line_end": 30,
+      "content_hash": "5ebd9c02b927c1fd625dbec5ece2d6704ceb15bd0595658ddab4fae2e6bde01c",
+      "relevance": 998.0,
+      "why": "必须保持的既有行为 BR-REPORT-03",
+      "spec_id": "BR-REPORT-03",
+      "file_exists": true,
+      "file_hash": "86542bf6b0ee192158623058c213ed27cc95c0a2a4d2bfe9ea3fa4a77429b562",
+      "content": "## BR-REPORT-03 金额汇总口径\n\n- 优先级：必须\n- 适用接口：`billing.report.MonthlyReport.totals_by_currency`\n- 规则：按币种分组后累加「应付金额」（`billing.pricing.compute_payable_minor`），不同币种绝不混加；金额始终是整数分。\n- 验证：`tests/test_report.py::test_totals_are_grouped_by_currency`"
+    },
+    {
+      "id": "spec:BR-REPORT-04",
+      "kind": "spec",
+      "path": "specs/02-report.md",
+      "symbol": "BR-REPORT-04",
+      "title": "明细行排序",
+      "line_start": 31,
+      "line_end": 37,
+      "content_hash": "f97d0fe3f95de2b0d300251263c714c4b2637fecb7b15d643c3f30fc6857df5b",
+      "relevance": 998.0,
+      "why": "必须保持的既有行为 BR-REPORT-04",
+      "spec_id": "BR-REPORT-04",
+      "file_exists": true,
+      "file_hash": "86542bf6b0ee192158623058c213ed27cc95c0a2a4d2bfe9ea3fa4a77429b562",
+      "content": "## BR-REPORT-04 明细行排序\n\n- 优先级：必须\n- 适用接口：`billing.report.MonthlyReport.rows`\n- 规则：明细行按 `order_id` 的字典序升序排列，保证同一份数据每次导出的行序稳定。\n- 验证：`tests/test_report.py::test_rows_are_sorted_by_order_id`"
+    }
+  ],
+  "code": [
+    {
+      "id": "code:billing.report:build_monthly_report",
+      "kind": "code",
+      "path": "src/billing/report.py",
+      "symbol": "billing.report:build_monthly_report",
+      "title": "build_monthly_report",
+      "line_start": 50,
+      "line_end": 101,
+      "content_hash": "4d5091e9d492703567afb5842e88ac7f4a2157108a894bc43117ad6e2f9c90ca",
+      "relevance": 999.0,
+      "why": "任务锚点 billing.report:build_monthly_report",
+      "file_exists": true,
+      "file_hash": "5992ac9fcaf76dafa5f3af5b3ed9c6e012600f4d700f944248572cc515082a1f",
+      "content": "def build_monthly_report(\n    orders: Iterable[Order],\n    year: int,\n    month: int,\n    currency: str | None = None,\n) -> MonthlyReport:\n    \"\"\"构造月度报表。\n\n    Args:\n        orders: 待统计订单，未支付订单不计入（BR-REPORT-01）。\n        year: 年份。\n        month: 月份，1-12。\n        currency: 币种过滤，``None`` 表示不限币种（BR-REPORT-02）。\n\n    Returns:\n        MonthlyReport: 报表对象；过滤后无订单时返回空报表。\n    \"\"\"\n\n    if not 1 <= month <= 12:\n        raise ValueError(f\"month 必须在 1-12 之间，收到 {month!r}\")\n\n    selected = [order for order in orders if order.is_paid and _in_period(order, year, month)]\n\n    if currency is not None:\n        wanted = currency.strip().upper()\n        if not wanted:\n            raise ValueError(\"currency 不能是空字符串，请传 None 表示不过滤\")\n        selected = [order for order in selected if order.currency.upper() == wanted]\n\n    selected.sort(key=lambda order: order.order_id)\n\n    totals: dict[str, int] = {}\n    rows: list[ReportRow] = []\n    for order in selected:\n        payable = compute_payable_minor(order)\n        rows.append(\n            ReportRow(\n                order_id=order.order_id,\n                currency=order.currency,\n                region=order.region,\n                amount_minor=order.amount_minor,\n                payable_minor=payable,\n            )\n        )\n        totals[order.currency] = totals.get(order.currency, 0) + payable\n\n    return MonthlyReport(\n        period=f\"{year:04d}-{month:02d}\",\n        order_count=len(rows),\n        totals_by_currency=totals,\n        rows=tuple(rows),\n    )"
+    },
+    {
+      "id": "code:billing.report:MonthlyReport",
+      "kind": "code",
+      "path": "src/billing/report.py",
+      "symbol": "billing.report:MonthlyReport",
+      "title": "MonthlyReport",
+      "line_start": 13,
+      "line_end": 43,
+      "content_hash": "cd672cc1cb59485335f70d2c355a752634dd232523905d49b27753cfa26a7db6",
+      "relevance": 999.0,
+      "why": "任务锚点 billing.report:MonthlyReport",
+      "file_exists": true,
+      "file_hash": "5992ac9fcaf76dafa5f3af5b3ed9c6e012600f4d700f944248572cc515082a1f",
+      "content": "class MonthlyReport:\n    \"\"\"一个自然月的结算报表。\n\n    Attributes:\n        period: 报表周期，形如 ``2026-09``。\n        order_count: 纳入报表的订单数。\n        totals_by_currency: 各币种的应计金额合计（分），BR-REPORT-03。\n        rows: 明细行，按订单号升序，BR-REPORT-04。\n    \"\"\"\n\n    period: str\n    order_count: int\n    totals_by_currency: dict[str, int] = field(default_factory=dict)\n    rows: tuple[ReportRow, ...] = ()\n\n    def to_dict(self) -> dict:\n        return {\n            \"period\": self.period,\n            \"order_count\": self.order_count,\n            \"totals_by_currency\": dict(sorted(self.totals_by_currency.items())),\n            \"rows\": [\n                {\n                    \"order_id\": row.order_id,\n                    \"currency\": row.currency,\n                    \"region\": row.region,\n                    \"amount_minor\": row.amount_minor,\n                    \"payable_minor\": row.payable_minor,\n                }\n                for row in self.rows\n            ],\n        }"
+    },
+    {
+      "id": "code:billing.validation:validate_order",
+      "kind": "code",
+      "path": "src/billing/validation.py",
+      "symbol": "billing.validation:validate_order",
+      "title": "validate_order",
+      "line_start": 15,
+      "line_end": 38,
+      "content_hash": "53eeb860367f8eb4a51de8c70461f64095fc878d942c04341bc0882ba40068f4",
+      "relevance": 2.3125,
+      "why": "命中：region、currency、none、order_id、br、02",
+      "file_exists": true,
+      "file_hash": "d7473a5c9247594a6d549feb62d843944caa23bea142a22b0536adc6aec21e91",
+      "content": "def validate_order(order: Order) -> None:\n    \"\"\"校验单笔订单，失败时抛出 ValidationError。\n\n    规则见 ``specs/03-validation.md``：\n\n    - BR-VALID-01：金额必须是非负整数（分）。\n    - BR-VALID-02：币种必须在支持列表内。\n    - BR-VALID-03：会员等级必须已登记。\n    - BR-VALID-04：优惠券代码必须已登记，允许为空。\n    - BR-VALID-05：区域不得为空。\n    \"\"\"\n\n    if not isinstance(order.amount_minor, int) or isinstance(order.amount_minor, bool):\n        raise ValidationError(f\"{order.order_id}: 金额必须是整数分，收到 {order.amount_minor!r}\")\n    if order.amount_minor < 0:\n        raise ValidationError(f\"{order.order_id}: 金额不能为负，收到 {order.amount_minor}\")\n    if order.currency.upper() not in SUPPORTED_CURRENCIES:\n        raise ValidationError(f\"{order.order_id}: 不支持的币种 {order.currency!r}\")\n    if order.member_tier not in TIER_DISCOUNT_BP:\n        raise ValidationError(f\"{order.order_id}: 未登记的会员等级 {order.member_tier!r}\")\n    if order.coupon_code and order.coupon_code not in COUPONS:\n        raise ValidationError(f\"{order.order_id}: 未登记的优惠券 {order.coupon_code!r}\")\n    if not order.region.strip():\n        raise ValidationError(f\"{order.order_id}: 区域不能为空\")"
+    },
+    {
+      "id": "code:billing.report:MonthlyReport.to_dict",
+      "kind": "code",
+      "path": "src/billing/report.py",
+      "symbol": "billing.report:MonthlyReport.to_dict",
+      "title": "MonthlyReport.to_dict",
+      "line_start": 28,
+      "line_end": 43,
+      "content_hash": "2810b13ded08651bb521bc6cf525877042705274c399d989075174972a3158d2",
+      "relevance": 1.4625,
+      "why": "命中：region、currency、order_id、report",
+      "file_exists": true,
+      "file_hash": "5992ac9fcaf76dafa5f3af5b3ed9c6e012600f4d700f944248572cc515082a1f",
+      "content": "    def to_dict(self) -> dict:\n        return {\n            \"period\": self.period,\n            \"order_count\": self.order_count,\n            \"totals_by_currency\": dict(sorted(self.totals_by_currency.items())),\n            \"rows\": [\n                {\n                    \"order_id\": row.order_id,\n                    \"currency\": row.currency,\n                    \"region\": row.region,\n                    \"amount_minor\": row.amount_minor,\n                    \"payable_minor\": row.payable_minor,\n                }\n                for row in self.rows\n            ],\n        }"
+    },
+    {
+      "id": "code:billing.models:ReportRow",
+      "kind": "code",
+      "path": "src/billing/models.py",
+      "symbol": "billing.models:ReportRow",
+      "title": "ReportRow",
+      "line_start": 42,
+      "line_end": 49,
+      "content_hash": "c4e54e3c93a53caded6255d6cf994676167ffa5d8cbf86bada312d9476eaf086",
+      "relevance": 1.1875,
+      "why": "命中：region、currency、order_id、report、报表",
+      "file_exists": true,
+      "file_hash": "403f6d1f04065d774277f6704b00d208bb3c3e657f397a2a565b295c3d398a73",
+      "content": "class ReportRow:\n    \"\"\"报表中的一行，对应一笔已支付订单。\"\"\"\n\n    order_id: str\n    currency: str\n    region: str\n    amount_minor: int\n    payable_minor: int"
+    },
+    {
+      "id": "code:billing.models:Order",
+      "kind": "code",
+      "path": "src/billing/models.py",
+      "symbol": "billing.models:Order",
+      "title": "Order",
+      "line_start": 13,
+      "line_end": 38,
+      "content_hash": "f28aa6d084425c24093bce215d24284277804a9dd76ded939c984311e6114ab4",
+      "relevance": 0.9,
+      "why": "命中：region、currency、none、order_id",
+      "file_exists": true,
+      "file_hash": "403f6d1f04065d774277f6704b00d208bb3c3e657f397a2a565b295c3d398a73",
+      "content": "class Order:\n    \"\"\"一笔已支付订单。\n\n    Attributes:\n        order_id: 订单号，全局唯一。\n        currency: ISO-4217 币种代码，如 CNY / USD。\n        region: 销售区域，如 华东 / 华南 / 华北。\n        amount_minor: 订单原始金额（分）。\n        member_tier: 会员等级，见 pricing.TIER_DISCOUNT。\n        coupon_code: 使用的优惠券代码，可为空。\n        status: 订单状态，paid / cancelled / refunded。\n        paid_on: 支付日期。\n    \"\"\"\n\n    order_id: str\n    currency: str\n    region: str\n    amount_minor: int\n    member_tier: str = \"basic\"\n    coupon_code: str | None = None\n    status: str = \"paid\"\n    paid_on: date = date(1970, 1, 1)\n\n    @property\n    def is_paid(self) -> bool:\n        return self.status == \"paid\""
+    }
+  ],
+  "tests": [
+    {
+      "id": "test:tests.test_repository:test_report_over_repository_uses_paid_orders_of_the_month",
+      "kind": "test",
+      "path": "tests/test_repository.py",
+      "symbol": "tests.test_repository:test_report_over_repository_uses_paid_orders_of_the_month",
+      "title": "test_report_over_repository_uses_paid_orders_of_the_month",
+      "line_start": 22,
+      "line_end": 30,
+      "content_hash": "6a5f9fdfc08c3d3f912805b285274f521a29af3e6fb46fd97610bf3563fc9739",
+      "relevance": 2.05,
+      "why": "命中：currency、none、order_id、report、02、03",
+      "test_id": "tests/test_repository.py::test_report_over_repository_uses_paid_orders_of_the_month",
+      "file_exists": true,
+      "file_hash": "2232c22b0bf7f1861ac3190c09a73b21076c031425e23cb1dc82b0631398db06",
+      "content": "def test_report_over_repository_uses_paid_orders_of_the_month() -> None:\n    repo = OrderRepository.from_json_file(DATA_FILE)\n\n    report = build_monthly_report(repo, 2026, 9)\n\n    # A-1004 取消、A-1006 退款、A-1007 落在 10 月，均不计入\n    assert [row.order_id for row in report.rows] == [\"A-1001\", \"A-1002\", \"A-1003\", \"A-1005\"]\n    # A-1003：6600 --WELCOME10--> 5940 --silver 300bp--> 5762\n    assert report.totals_by_currency[\"CNY\"] == 128000 + 5762"
+    },
+    {
+      "id": "test:tests.test_report:test_unknown_currency_returns_empty_report",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_unknown_currency_returns_empty_report",
+      "title": "test_unknown_currency_returns_empty_report",
+      "line_start": 67,
+      "line_end": 72,
+      "content_hash": "83bc3b30eef01bf88d995a1b3fc807d8fcd3eb43c0cc3bc5ea55b61b1caff081",
+      "relevance": 1.9625,
+      "why": "命中：currency、none、report、02",
+      "test_id": "tests/test_report.py::test_unknown_currency_returns_empty_report",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_unknown_currency_returns_empty_report() -> None:\n    report = build_monthly_report(september_orders(), 2026, 9, currency=\"GBP\")\n\n    assert report.order_count == 0\n    assert report.totals_by_currency == {}\n    assert report.rows == ()"
+    },
+    {
+      "id": "test:tests.test_report:test_rows_are_sorted_by_order_id",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_rows_are_sorted_by_order_id",
+      "title": "test_rows_are_sorted_by_order_id",
+      "line_start": 87,
+      "line_end": 92,
+      "content_hash": "b92fa26d0ebf7e46e31096e65259a97def3caec24e1bf3bf927040c05b324a98",
+      "relevance": 1.7875,
+      "why": "命中：none、order_id、report、02、03、01",
+      "test_id": "tests/test_report.py::test_rows_are_sorted_by_order_id",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_rows_are_sorted_by_order_id() -> None:\n    shuffled = list(reversed(september_orders()))\n\n    report = build_monthly_report(shuffled, 2026, 9)\n\n    assert [row.order_id for row in report.rows] == [\"A-1001\", \"A-1002\", \"A-1003\"]"
+    },
+    {
+      "id": "test:tests.test_report:test_cancelled_orders_are_excluded",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_cancelled_orders_are_excluded",
+      "title": "test_cancelled_orders_are_excluded",
+      "line_start": 47,
+      "line_end": 57,
+      "content_hash": "4abcc09ee76fb94a997f605eb82f0b64c804ce7236783345baf55e73fbfbf886",
+      "relevance": 1.7625,
+      "why": "命中：none、order_id、report、02、03、04",
+      "test_id": "tests/test_report.py::test_cancelled_orders_are_excluded",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_cancelled_orders_are_excluded() -> None:\n    orders = september_orders() + [\n        order(\"A-1004\", 9999, status=\"cancelled\"),\n        order(\"A-1005\", 8888, status=\"refunded\"),\n    ]\n\n    report = build_monthly_report(orders, 2026, 9)\n\n    assert report.order_count == 3\n    assert [row.order_id for row in report.rows] == [\"A-1001\", \"A-1002\", \"A-1003\"]\n    assert \"A-1004\" not in [row.order_id for row in report.rows]"
+    },
+    {
+      "id": "test:tests.test_report:test_currency_filter",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_currency_filter",
+      "title": "test_currency_filter",
+      "line_start": 60,
+      "line_end": 64,
+      "content_hash": "5907691258d71fd48a02894970b5ba4988cee6ee565d745d4e4688e8ab5c3d44",
+      "relevance": 1.6875,
+      "why": "命中：currency、none、order_id、report、02",
+      "test_id": "tests/test_report.py::test_currency_filter",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_currency_filter() -> None:\n    report = build_monthly_report(september_orders(), 2026, 9, currency=\"usd\")\n\n    assert report.order_count == 1\n    assert [row.order_id for row in report.rows] == [\"A-1002\"]"
+    },
+    {
+      "id": "test:tests.test_report:test_totals_are_grouped_by_currency",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_totals_are_grouped_by_currency",
+      "title": "test_totals_are_grouped_by_currency",
+      "line_start": 80,
+      "line_end": 84,
+      "content_hash": "eada3f0a00f3078963aa49ff1b1d968df6d78f253e0eb58ff186383e3959370b",
+      "relevance": 1.5625,
+      "why": "命中：currency、none、report、02、03",
+      "test_id": "tests/test_report.py::test_totals_are_grouped_by_currency",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_totals_are_grouped_by_currency() -> None:\n    report = build_monthly_report(september_orders(), 2026, 9)\n\n    # A-1003 为银卡：5000 - 5000*300//10000 = 4850\n    assert report.totals_by_currency == {\"CNY\": 10000 + 4850, \"USD\": 19000}"
+    },
+    {
+      "id": "test:tests.test_report:test_blank_currency_raises_value_error",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_blank_currency_raises_value_error",
+      "title": "test_blank_currency_raises_value_error",
+      "line_start": 75,
+      "line_end": 77,
+      "content_hash": "879e9c4b10dcc3bfe9855619eead491c88f5bfe04996f84f394c67623611d22a",
+      "relevance": 1.4375,
+      "why": "命中：currency、none、valueerror、report、02",
+      "test_id": "tests/test_report.py::test_blank_currency_raises_value_error",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_blank_currency_raises_value_error() -> None:\n    with pytest.raises(ValueError):\n        build_monthly_report(september_orders(), 2026, 9, currency=\"   \")"
+    },
+    {
+      "id": "test:tests.test_report:test_other_month_is_empty",
+      "kind": "test",
+      "path": "tests/test_report.py",
+      "symbol": "tests.test_report:test_other_month_is_empty",
+      "title": "test_other_month_is_empty",
+      "line_start": 95,
+      "line_end": 99,
+      "content_hash": "582398c0f9626712e7bb30694e3b3aed802a69e28ac4856bfb44a123f3bbb08c",
+      "relevance": 0.925,
+      "why": "命中：none、report、02",
+      "test_id": "tests/test_report.py::test_other_month_is_empty",
+      "file_exists": true,
+      "file_hash": "914e3d95f296b73635b6e987c413e2520128d9f4c95fcd58550e9f4e82af0d06",
+      "content": "def test_other_month_is_empty() -> None:\n    report = build_monthly_report(september_orders(), 2026, 10)\n\n    assert report.period == \"2026-10\"\n    assert report.order_count == 0"
+    }
+  ],
+  "full_files": {
+    "src/billing/report.py": "\"\"\"月度结算报表（BR-REPORT-*）。\"\"\"\n\nfrom __future__ import annotations\n\nfrom collections.abc import Iterable\nfrom dataclasses import dataclass, field\n\nfrom .models import Order, ReportRow\nfrom .pricing import compute_payable_minor\n\n\n@dataclass(frozen=True)\nclass MonthlyReport:\n    \"\"\"一个自然月的结算报表。\n\n    Attributes:\n        period: 报表周期，形如 ``2026-09``。\n        order_count: 纳入报表的订单数。\n        totals_by_currency: 各币种的应计金额合计（分），BR-REPORT-03。\n        rows: 明细行，按订单号升序，BR-REPORT-04。\n        totals_by_region: 各区域的应计金额合计（分），BR-REPORT-07。\n    \"\"\"\n\n    period: str\n    order_count: int\n    totals_by_currency: dict[str, int] = field(default_factory=dict)\n    rows: tuple[ReportRow, ...] = ()\n    totals_by_region: dict[str, int] = field(default_factory=dict)\n\n    def to_dict(self) -> dict:\n        return {\n            \"period\": self.period,\n            \"order_count\": self.order_count,\n            \"totals_by_currency\": dict(sorted(self.totals_by_currency.items())),\n            \"totals_by_region\": dict(sorted(self.totals_by_region.items())),\n            \"rows\": [\n                {\n                    \"order_id\": row.order_id,\n                    \"currency\": row.currency,\n                    \"region\": row.region,\n                    \"amount_minor\": row.amount_minor,\n                    \"payable_minor\": row.payable_minor,\n                }\n                for row in self.rows\n            ],\n        }\n\n\ndef _in_period(order: Order, year: int, month: int) -> bool:\n    return order.paid_on.year == year and order.paid_on.month == month\n\n\ndef build_monthly_report(\n    orders: Iterable[Order],\n    year: int,\n    month: int,\n    currency: str | None = None,\n    region: str | None = None,\n) -> MonthlyReport:\n    \"\"\"构造月度报表。\n\n    Args:\n        orders: 待统计订单，未支付订单不计入（BR-REPORT-01）。\n        year: 年份。\n        month: 月份，1-12。\n        currency: 币种过滤，``None`` 表示不限币种（BR-REPORT-02）。\n        region: 区域过滤，``None`` 表示不限区域（BR-REPORT-05）。\n\n    Returns:\n        MonthlyReport: 报表对象；过滤后无订单时返回空报表。\n    \"\"\"\n\n    if not 1 <= month <= 12:\n        raise ValueError(f\"month 必须在 1-12 之间，收到 {month!r}\")\n\n    selected = [order for order in orders if order.is_paid and _in_period(order, year, month)]\n\n    if currency is not None:\n        wanted = currency.strip().upper()\n        if not wanted:\n            raise ValueError(\"currency 不能是空字符串，请传 None 表示不过滤\")\n        selected = [\n            order for order in selected if order.currency.strip().upper() == wanted\n        ]\n\n    if region is not None:\n        wanted_region = region.strip().casefold()\n        if not wanted_region:\n            raise ValueError(\"region 不能是空字符串，请传 None 表示不过滤\")\n        selected = [\n            order\n            for order in selected\n            if order.region.strip().casefold() == wanted_region\n        ]\n\n    selected.sort(key=lambda order: order.order_id)\n\n    totals: dict[str, int] = {}\n    totals_by_region: dict[str, int] = {}\n    rows: list[ReportRow] = []\n    for order in selected:\n        payable = compute_payable_minor(order)\n        rows.append(\n            ReportRow(\n                order_id=order.order_id,\n                currency=order.currency,\n                region=order.region,\n                amount_minor=order.amount_minor,\n                payable_minor=payable,\n            )\n        )\n        totals[order.currency] = totals.get(order.currency, 0) + payable\n\n        region_key = order.region.strip()\n        totals_by_region[region_key] = totals_by_region.get(region_key, 0) + payable\n\n    return MonthlyReport(\n        period=f\"{year:04d}-{month:02d}\",\n        order_count=len(rows),\n        totals_by_currency=totals,\n        rows=tuple(rows),\n        totals_by_region=totals_by_region,\n    )\n",
+    "src/billing/validation.py": "\"\"\"订单校验（BR-VALID-*）。\"\"\"\n\nfrom __future__ import annotations\n\nfrom .models import Order\nfrom .pricing import COUPONS, TIER_DISCOUNT_BP\n\nSUPPORTED_CURRENCIES = {\"CNY\", \"USD\", \"EUR\", \"JPY\"}\n\n\nclass ValidationError(ValueError):\n    \"\"\"订单数据不满足规格时抛出。\"\"\"\n\n\ndef validate_order(order: Order) -> None:\n    \"\"\"校验单笔订单，失败时抛出 ValidationError。\n\n    规则见 ``specs/03-validation.md``：\n\n    - BR-VALID-01：金额必须是非负整数（分）。\n    - BR-VALID-02：币种必须在支持列表内。\n    - BR-VALID-03：会员等级必须已登记。\n    - BR-VALID-04：优惠券代码必须已登记，允许为空。\n    - BR-VALID-05：区域不得为空。\n    \"\"\"\n\n    if not isinstance(order.amount_minor, int) or isinstance(order.amount_minor, bool):\n        raise ValidationError(f\"{order.order_id}: 金额必须是整数分，收到 {order.amount_minor!r}\")\n    if order.amount_minor < 0:\n        raise ValidationError(f\"{order.order_id}: 金额不能为负，收到 {order.amount_minor}\")\n    if order.currency.upper() not in SUPPORTED_CURRENCIES:\n        raise ValidationError(f\"{order.order_id}: 不支持的币种 {order.currency!r}\")\n    if order.member_tier not in TIER_DISCOUNT_BP:\n        raise ValidationError(f\"{order.order_id}: 未登记的会员等级 {order.member_tier!r}\")\n    if order.coupon_code and order.coupon_code not in COUPONS:\n        raise ValidationError(f\"{order.order_id}: 未登记的优惠券 {order.coupon_code!r}\")\n    if not order.region.strip():\n        raise ValidationError(f\"{order.order_id}: 区域不能为空\")\n",
+    "src/billing/models.py": "\"\"\"结算域模型。\n\n金额一律使用「分」为单位的整数（BR-PRICE-01），禁止出现浮点数金额。\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\nfrom datetime import date\n\n\n@dataclass(frozen=True)\nclass Order:\n    \"\"\"一笔已支付订单。\n\n    Attributes:\n        order_id: 订单号，全局唯一。\n        currency: ISO-4217 币种代码，如 CNY / USD。\n        region: 销售区域，如 华东 / 华南 / 华北。\n        amount_minor: 订单原始金额（分）。\n        member_tier: 会员等级，见 pricing.TIER_DISCOUNT。\n        coupon_code: 使用的优惠券代码，可为空。\n        status: 订单状态，paid / cancelled / refunded。\n        paid_on: 支付日期。\n    \"\"\"\n\n    order_id: str\n    currency: str\n    region: str\n    amount_minor: int\n    member_tier: str = \"basic\"\n    coupon_code: str | None = None\n    status: str = \"paid\"\n    paid_on: date = date(1970, 1, 1)\n\n    @property\n    def is_paid(self) -> bool:\n        return self.status == \"paid\"\n\n\n@dataclass(frozen=True)\nclass ReportRow:\n    \"\"\"报表中的一行，对应一笔已支付订单。\"\"\"\n\n    order_id: str\n    currency: str\n    region: str\n    amount_minor: int\n    payable_minor: int\n\n\ndef _as_date(value: str | date) -> date:\n    if isinstance(value, date):\n        return value\n    return date.fromisoformat(value)\n\n\ndef order_from_dict(payload: dict) -> Order:\n    \"\"\"从 JSON 结构构造订单，日期字段接受 ISO 字符串。\"\"\"\n\n    return Order(\n        order_id=payload[\"order_id\"],\n        currency=payload[\"currency\"],\n        region=payload[\"region\"],\n        amount_minor=int(payload[\"amount_minor\"]),\n        member_tier=payload.get(\"member_tier\", \"basic\"),\n        coupon_code=payload.get(\"coupon_code\"),\n        status=payload.get(\"status\", \"paid\"),\n        paid_on=_as_date(payload.get(\"paid_on\", \"1970-01-01\")),\n    )\n"
+  },
+  "gaps": [],
+  "guards": {
+    "allowed_paths": [
+      "src/"
+    ],
+    "forbidden_paths": [
+      "tests/",
+      "specs/"
+    ],
+    "must_preserve": [
+      {
+        "spec_id": "BR-REPORT-02",
+        "reason": "既有币种过滤语义不变：None 不过滤、未知币种返回空报表、空白入参抛 ValueError"
+      },
+      {
+        "spec_id": "BR-REPORT-03",
+        "reason": "汇总口径不变：仍按币种分组累加应付金额，禁止混币"
+      },
+      {
+        "spec_id": "BR-REPORT-04",
+        "reason": "明细行仍按 order_id 升序"
+      },
+      {
+        "spec_id": "BR-REPORT-01",
+        "reason": "取消/退款订单仍不得计入"
+      }
+    ],
+    "acceptance_tests": [
+      "acceptance/test_acceptance_report_region.py"
+    ],
+    "regression_tests": "tests"
+  },
+  "state": {
+    "task_id": "task-001-report-region-filter",
+    "status": "verified",
+    "done": [
+      "导入资料并确定上下文（待改文件 1 个）",
+      "MiniMax 生成改动：src/billing/report.py",
+      "functional 测试通过（8 条）",
+      "regression 测试通过（25 条）"
+    ],
+    "todo": [
+      "人工复核 change.patch 与规格一致性"
+    ],
+    "verification": [
+      {
+        "name": "functional",
+        "status": "passed",
+        "passed": 8,
+        "failed": 0
+      },
+      {
+        "name": "regression",
+        "status": "passed",
+        "passed": 25,
+        "failed": 0
+      }
+    ],
+    "change": {
+      "files": [
+        "src/billing/report.py"
+      ],
+      "patch": "runs/task-001-report-region-filter/change.patch",
+      "diff_lines": 80
+    },
+    "updated_at": "2026-11-01T07:24:14+00:00",
+    "revision": 1
+  }
+}

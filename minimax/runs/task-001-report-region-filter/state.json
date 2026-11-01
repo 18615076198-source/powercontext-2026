@@ -1,0 +1,36 @@
+{
+  "task_id": "task-001-report-region-filter",
+  "status": "verified",
+  "done": [
+    "导入资料并确定上下文（待改文件 1 个）",
+    "MiniMax 生成改动：src/billing/report.py",
+    "functional 测试通过（8 条）",
+    "regression 测试通过（25 条）"
+  ],
+  "todo": [
+    "人工复核 change.patch 与规格一致性"
+  ],
+  "verification": [
+    {
+      "name": "functional",
+      "status": "passed",
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "name": "regression",
+      "status": "passed",
+      "passed": 25,
+      "failed": 0
+    }
+  ],
+  "change": {
+    "files": [
+      "src/billing/report.py"
+    ],
+    "patch": "runs/task-001-report-region-filter/change.patch",
+    "diff_lines": 80
+  },
+  "updated_at": "2026-11-01T07:24:14+00:00",
+  "revision": 1
+}

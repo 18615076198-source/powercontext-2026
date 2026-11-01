@@ -92,7 +92,7 @@ def cmd_doctor(args) -> int:
     print(f"MiniMax    : {settings.minimax_base_url} / {settings.minimax_model} / key={'已配置' if settings.minimax_api_key else '缺失'}")
     store = make_store(settings)
     print(f"存储状态   : {json.dumps(store.backend_info(), ensure_ascii=False)}")
-    client = PowerContextClient(settings)
+    client = PowerContextClient(settings, trace)
     health = client.health()
     print(f"PowerContext: {settings.powercontext_url} -> {health.get('status')}")
     if health.get("status") != "ready":
@@ -318,6 +318,7 @@ def cmd_verify(args) -> int:
 def cmd_save(args) -> int:
     settings = Settings.load()
     task, project_root, run_dir = load_task(args.task)
+    trace = Trace(run_dir / "trace.jsonl")
     apply_payload = _read_json(run_dir / "apply.json") or {}
     verify_payload = _read_json(run_dir / "verify.json") or {}
     mirror = _load_mirror(run_dir, task.task_id)
@@ -361,13 +362,21 @@ def cmd_save(args) -> int:
         revision=int(mirror.revision) + 1,
     )
 
-    client = PowerContextClient(settings)
+    client = PowerContextClient(settings, trace)
+    scope_id = settings.powercontext_scope_id
+    prior_revision = 0 if mirror.status == "new" else mirror.revision
     try:
-        scope_id = settings.powercontext_scope_id or client.ensure_scope(
-            f"sddctx · {task.project}",
-            "规有所依：SDD 上下文管理系统的任务状态分区",
-            f"sddctx-{sha256_text(str(project_root))[:12]}",
-        )
+        if not scope_id:
+            scope_id = client.ensure_scope(
+                f"sddctx · {task.project}",
+                "规有所依：SDD 上下文管理系统的任务状态分区",
+                f"sddctx-{sha256_text(str(project_root))[:12]}",
+            )
+        # 服务端可能留有更早的状态快照，revision 以两端较大值为准，保证单调递增
+        recalled = client.recall_state(scope_id, task.task_id)
+        if recalled.state is not None:
+            prior_revision = max(prior_revision, recalled.state.revision)
+        state.revision = prior_revision + 1
         client.save_state(scope_id, state)
     except PowerContextError as error:
         print(f"[save] PowerContext 不可用：{error}")
@@ -385,7 +394,8 @@ def cmd_save(args) -> int:
 def cmd_resume(args) -> int:
     settings = Settings.load()
     task, project_root, run_dir = load_task(args.task)
-    client = PowerContextClient(settings)
+    trace = Trace(run_dir / "trace.jsonl")
+    client = PowerContextClient(settings, trace)
     scope_file = run_dir / "scope.txt"
     scope_id = args.scope_id or (scope_file.read_text(encoding="utf-8").strip() if scope_file.is_file() else "")
     scope_id = scope_id or settings.powercontext_scope_id

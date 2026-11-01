@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "task_id": "task-001-report-region-filter",
+  "files": [
+    "src/billing/report.py"
+  ],
+  "file_hashes": {
+    "src/billing/report.py": "5992ac9fcaf76dafa5f3af5b3ed9c6e012600f4d700f944248572cc515082a1f"
+  },
+  "diff_lines": 80,
+  "minimax": {
+    "model": "MiniMax-M3.1-Flash",
+    "base_url": "https://api.minimaxi.com/v1",
+    "latency_ms": 19907,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "request_id": "07361b71ab8f25e085e727d6e7d9c264",
+    "prompt_chars": 11991,
+    "response_chars": 3729,
+    "attempt": 1,
+    "error": ""
+  },
+  "model_output_chars": 3729,
+  "at": "2026-11-01T07:21:40+00:00"
+}

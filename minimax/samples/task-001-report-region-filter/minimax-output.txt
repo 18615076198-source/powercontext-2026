@@ -19,7 +19,7 @@ class MonthlyReport:
         order_count: 纳入报表的订单数。
         totals_by_currency: 各币种的应计金额合计（分），BR-REPORT-03。
         rows: 明细行，按订单号升序，BR-REPORT-04。
-        totals_by_region: 各销售区域的应计金额合计（分），BR-REPORT-07。
+        totals_by_region: 各区域的应计金额合计（分），BR-REPORT-07。
     """
 
     period: str
@@ -65,7 +65,7 @@ def build_monthly_report(
         year: 年份。
         month: 月份，1-12。
         currency: 币种过滤，``None`` 表示不限币种（BR-REPORT-02）。
-        region: 销售区域过滤，``None`` 表示不限区域（BR-REPORT-05）。
+        region: 区域过滤，``None`` 表示不限区域（BR-REPORT-05）。
 
     Returns:
         MonthlyReport: 报表对象；过滤后无订单时返回空报表。
@@ -77,29 +77,26 @@ def build_monthly_report(
     selected = [order for order in orders if order.is_paid and _in_period(order, year, month)]
 
     if currency is not None:
-        wanted_currency = currency.strip().upper()
-        if not wanted_currency:
+        wanted = currency.strip().upper()
+        if not wanted:
             raise ValueError("currency 不能是空字符串，请传 None 表示不过滤")
         selected = [
-            order
-            for order in selected
-            if order.currency.strip().upper() == wanted_currency
+            order for order in selected if order.currency.strip().upper() == wanted
         ]
 
     if region is not None:
-        wanted_region = region.strip()
+        wanted_region = region.strip().casefold()
         if not wanted_region:
             raise ValueError("region 不能是空字符串，请传 None 表示不过滤")
-        wanted_region_key = wanted_region.casefold()
         selected = [
             order
             for order in selected
-            if order.region.strip().casefold() == wanted_region_key
+            if order.region.strip().casefold() == wanted_region
         ]
 
     selected.sort(key=lambda order: order.order_id)
 
-    totals_by_currency: dict[str, int] = {}
+    totals: dict[str, int] = {}
     totals_by_region: dict[str, int] = {}
     rows: list[ReportRow] = []
     for order in selected:
@@ -113,17 +110,15 @@ def build_monthly_report(
                 payable_minor=payable,
             )
         )
-        totals_by_currency[order.currency] = (
-            totals_by_currency.get(order.currency, 0) + payable
-        )
+        totals[order.currency] = totals.get(order.currency, 0) + payable
 
-        region_name = order.region.strip()
-        totals_by_region[region_name] = totals_by_region.get(region_name, 0) + payable
+        region_key = order.region.strip()
+        totals_by_region[region_key] = totals_by_region.get(region_key, 0) + payable
 
     return MonthlyReport(
         period=f"{year:04d}-{month:02d}",
         order_count=len(rows),
-        totals_by_currency=totals_by_currency,
+        totals_by_currency=totals,
         rows=tuple(rows),
         totals_by_region=totals_by_region,
     )

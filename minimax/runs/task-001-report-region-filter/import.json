@@ -1,0 +1,39 @@
+{
+  "backend": "sqlite",
+  "store": {
+    "backend": "sqlite",
+    "path": "C:\\Users\\ASUS\\WorkBuddy\\2026-11-01-11-00-46\\pc\\minimax\\.sddctx\\sddctx.db",
+    "chunks": {
+      "code": 21,
+      "spec": 17,
+      "test": 25
+    }
+  },
+  "chunks": 63,
+  "counts": {
+    "code": 21,
+    "spec": 17,
+    "test": 25
+  },
+  "spec_ids": [
+    "BR-PRICE-01",
+    "BR-PRICE-02",
+    "BR-PRICE-03",
+    "BR-PRICE-04",
+    "BR-REPORT-01",
+    "BR-REPORT-02",
+    "BR-REPORT-03",
+    "BR-REPORT-04",
+    "BR-REPORT-05",
+    "BR-REPORT-06",
+    "BR-REPORT-07",
+    "BR-REPORT-08",
+    "BR-VALID-01",
+    "BR-VALID-02",
+    "BR-VALID-03",
+    "BR-VALID-04",
+    "BR-VALID-05"
+  ],
+  "started_at": "2026-11-01T07:21:19+00:00",
+  "finished_at": "2026-11-01T07:21:19+00:00"
+}
