@@ -143,6 +143,7 @@ from powercontext.builtin.persistence.artifact_governance import (
     ArtifactGovernance,
     ArtifactLifecycleState,
 )
+from powercontext.builtin.persistence.database import AsyncDatabase
 from powercontext.builtin.persistence.skill_publications import SkillPublication
 from powercontext.builtin.publication import ArtifactPublicationApplication
 from powercontext.builtin.records import (
@@ -252,6 +253,7 @@ from powercontext.builtin.runtime.recall_sufficiency import (
     build_recall_candidates,
     recall_effort,
 )
+from powercontext.builtin.runtime.source_lifecycle import SourceLifecycleApplication
 from powercontext.builtin.runtime.statistics import RelationalScopedStatistics, overview_selection
 from powercontext.builtin.scope import ScopeApplication, ScopeDescriptor, ScopeSelection
 from powercontext.builtin.scope.subject_sources import SubjectSourceService
@@ -492,10 +494,12 @@ class ScopedSourceApplication:
                             span.set_attributes({_MEMORY_CAPTURE_SOURCE_COUNT: 1})
             except BaseValueConflictError as error:
                 raise SourceConflictError("identity", error.identity) from None
-            return SourceReceipt(
+            receipt = SourceReceipt(
                 source_ref=SourceRef(source_type=record.source_type, source_id=record.source_id),
                 sequence=record.position,
             )
+            self._notify_source_count_trigger()
+            return receipt
         async with self._runtime._context(self.scope_id) as context:
             with self._runtime._stage(_MEMORY_CAPTURE_STAGE, attributes={}) as span:
                 source, sequence = await context.sources.capture(
@@ -508,7 +512,23 @@ class ScopedSourceApplication:
                 )
                 if span is not None:
                     span.set_attributes({_MEMORY_CAPTURE_SOURCE_COUNT: 1})
-            return SourceReceipt(source_ref=context.sources.catalog.as_ref(source), sequence=sequence)
+            receipt = SourceReceipt(source_ref=context.sources.catalog.as_ref(source), sequence=sequence)
+            self._notify_source_count_trigger()
+            return receipt
+
+    def _notify_source_count_trigger(self) -> None:
+        """Report a committed journal write to Families admitted by a Source count.
+
+        Capture does not change a wall-clock schedule, so the Supervisor only needs to
+        re-check the count condition. Replayed identities wake it too: the count is
+        recomputed from persisted journal and cursor state, never from the call itself.
+        """
+
+        supervisor = self._runtime.artifact_processing_supervisor
+        if supervisor is None:
+            return
+        for binding_name in self._runtime.source_count_bindings:
+            supervisor.wake(binding_name)
 
 
 class SourceApplication:
@@ -3011,6 +3031,7 @@ class BuiltinRuntime:
         capabilities: RuntimeCapabilities,
         code_service: CodeService | None = None,
         source_window_limit: int = 100,
+        source_count_bindings: tuple[str, ...] = (),
         context_assembly_max_entries: int = 8,
         recall_sufficiency_policy: RecallSufficiencyPolicy | None = None,
         scope_cache_size: int = DEFAULT_SCOPE_CACHE_SIZE,
@@ -3059,6 +3080,7 @@ class BuiltinRuntime:
         remote_ingestion: RemoteIngestion | None = None,
         dream_service: DreamService | None = None,
         generation_concurrency: int = 4,
+        database: AsyncDatabase | None = None,
     ) -> None:
         if source_window_limit < 1:
             raise _RuntimeConfigurationError("source_window_limit")
@@ -3067,6 +3089,7 @@ class BuiltinRuntime:
         if scope_cache_size < 1:
             raise _RuntimeConfigurationError("scope_cache_size")
         self._provider = provider
+        self.database = database
         self._capabilities = capabilities
         self._review_service = review_service
         self.profiles = profiles
@@ -3115,6 +3138,7 @@ class BuiltinRuntime:
         self._scheduled_source_runner = scheduled_source_runner
         self._scheduled_experience_runner = scheduled_experience_runner
         self.source_window_limit = source_window_limit
+        self.source_count_bindings = tuple(source_count_bindings)
         self.context_assembly_max_entries = context_assembly_max_entries
         self.recall_sufficiency_policy = recall_sufficiency_policy
         self._scope_cache = ScopeCache(
@@ -3135,6 +3159,7 @@ class BuiltinRuntime:
         self.ingestion = RemoteIngestionApplication(self, remote_ingestion)
         self.code = CodeApplication(self, code_service or CodeService(CodeConfig()))
         self.context = ContextApplication(self)
+        self.lifecycle = SourceLifecycleApplication(self)
         self.experience = ExperienceApplication(self)
         self.dream = DreamApplication(self)
         self.external_skills = ExternalSkillApplication(self)
