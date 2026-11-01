@@ -16,14 +16,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from powercontext.builtin.persistence.cursors import SourceCursorRepository
-from powercontext.builtin.persistence.database import AsyncDatabase
+from powercontext.builtin.persistence.database import SELECTION_BATCH_SIZE, AsyncDatabase
 from powercontext.builtin.persistence.processing_intents import ArtifactProcessingIntentRepository
 from powercontext.builtin.persistence.supervision import ArtifactProcessingFence, ArtifactProcessingLeaseRepository
 from powercontext.builtin.persistence.tables import PROFILE_POLICIES_TABLE, SOURCE_JOURNAL_HEADS_TABLE
+
+_SOURCE_JOURNAL_HEADS = SOURCE_JOURNAL_HEADS_TABLE
 
 
 async def enabled_profile_scopes(connection: AsyncConnection, scope_ids: tuple[str, ...]) -> frozenset[str]:
@@ -43,6 +47,39 @@ async def enabled_profile_scopes(connection: AsyncConnection, scope_ids: tuple[s
         .with_for_update()
     )
     return frozenset(rows)
+
+
+async def pending_source_counts(
+    connection: AsyncConnection,
+    binding_name: str,
+    scope_ids: Sequence[str],
+    /,
+) -> dict[str, int]:
+    """Count each scope's journal entries after this binding's last successful cursor.
+
+    The journal identity is the only input: a repeated capture or a receipt trust upgrade
+    keeps the same position and therefore adds nothing to the count, while a server-side
+    lineage Source occupies its own position like any other entry. A missing cursor starts
+    at position zero.
+    """
+
+    ordered = tuple(dict.fromkeys(scope_ids))
+    heads: dict[str, int] = {}
+    for start in range(0, len(ordered), SELECTION_BATCH_SIZE):
+        batch = ordered[start : start + SELECTION_BATCH_SIZE]
+        rows = await connection.execute(
+            select(_SOURCE_JOURNAL_HEADS.c.scope_id, _SOURCE_JOURNAL_HEADS.c.position).where(
+                _SOURCE_JOURNAL_HEADS.c.scope_id.in_(batch)
+            )
+        )
+        heads.update({str(scope): int(position) for scope, position in rows.all()})
+    cursors = await SourceCursorRepository().load_many(connection, ordered, binding_name)
+    counts: dict[str, int] = {}
+    for scope in ordered:
+        stored = cursors.get(scope)
+        consumed = 0 if stored is None else stored.cursor.sequence
+        counts[scope] = max(0, heads.get(scope, 0) - consumed)
+    return counts
 
 
 class SourceProcessingPendingProvider:
