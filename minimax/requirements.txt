@@ -1,0 +1,7 @@
+# 评测环境（Linux）一次性安装
+# seekdb 嵌入式内核 pylibseekdb 只提供 Linux/macOS 轮子，Windows 本机请改用 SDDCTX_STORE=sqlite
+pyseekdb>=1.4,<2
+pytest>=8
+
+# PowerContext Server（提供任务状态的持久化与召回）
+powercontext[cli,server]==1.2.0

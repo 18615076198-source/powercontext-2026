@@ -1,0 +1,17 @@
+# 密钥与本地环境
+.env
+.env.local
+
+# 本地数据库与运行时目录
+.sddctx/
+.powercontext/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+
+# 验收测试的临时暂存目录（运行后会被清理）
+demo/billing-service/.sddctx/

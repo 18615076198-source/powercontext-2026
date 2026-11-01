@@ -1,0 +1,28 @@
+{
+  "$comment": "验证样例：明确『要改什么』（request + spec_update）与『哪些原有行为必须保持』（must_preserve + regression_tests）。",
+  "task_id": "task-001-report-region-filter",
+  "title": "月度报表支持按销售区域过滤",
+  "project": "demo/billing-service",
+  "request": "月度结算报表需要支持按销售区域（region）过滤：运营同学只导出某个区域的订单，并且区域维度也要在报表里汇总。要求：①新增 region 参数，不传时行为与现在完全一致；②region 与已有 currency 过滤可以叠加；③报表结果里增加按区域的金额汇总，只统计过滤后的订单；④区域名输入要容忍前后空格和大小写差异；⑤传入不存在的区域时返回空报表而不是报错。",
+  "anchors": {
+    "spec_ids": ["BR-REPORT-05", "BR-REPORT-06", "BR-REPORT-07"],
+    "symbols": ["billing.report:build_monthly_report", "billing.report:MonthlyReport"]
+  },
+  "must_preserve": [
+    {"spec_id": "BR-REPORT-02", "reason": "既有币种过滤语义不变：None 不过滤、未知币种返回空报表、空白入参抛 ValueError"},
+    {"spec_id": "BR-REPORT-03", "reason": "汇总口径不变：仍按币种分组累加应付金额，禁止混币"},
+    {"spec_id": "BR-REPORT-04", "reason": "明细行仍按 order_id 升序"},
+    {"spec_id": "BR-REPORT-01", "reason": "取消/退款订单仍不得计入"}
+  ],
+  "spec_update": [
+    {"target": "specs/02-report.md", "source": "spec-update/02-report.md"}
+  ],
+  "acceptance_tests": [
+    "acceptance/test_acceptance_report_region.py"
+  ],
+  "regression_tests": "tests",
+  "allowed_paths": ["src/"],
+  "extra_context": [
+    "报表被财务月度结账脚本调用，任何签名变更都必须保持旧调用可用。"
+  ]
+}

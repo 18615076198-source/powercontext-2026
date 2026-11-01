@@ -1,0 +1,99 @@
+name: minimax-sddctx-ci
+
+# 在 Linux（有 seekdb 嵌入式内核）上验证 minimax/ 的 SDD 上下文模块：
+# 1) 模块自身测试（seekdb 真实后端）
+# 2) 从 v1 规格出发跑完整流程：import → plan → spec-apply → import → plan → apply → verify → save → resume
+# MiniMax 调用在 CI 中使用已冻结的真实输出（samples/.../minimax-output.txt），
+# 真实在线调用的记录见 runs/task-001-*/trace.jsonl 中的 minimax.chat 事件。
+
+on:
+  push:
+    branches: ["2026-competition-ecosystem"]
+    paths: ["minimax/**", ".github/workflows/minimax-ci.yml"]
+  pull_request:
+    paths: ["minimax/**"]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      PYTHONPATH: src
+      SDDCTX_STORE: seekdb
+      SDDCTX_SEEKDB_PATH: ${{ github.workspace }}/.ci/seekdb
+      SDDCTX_SEEKDB_DATABASE: sddctx
+      SDDCTX_SEEKDB_EMBEDDING: "off"
+      SDDCTX_MINIMAX_REPLAY_FILE: ${{ github.workspace }}/minimax/samples/task-001-report-region-filter/minimax-output.txt
+      POWERCONTEXT_URL: http://127.0.0.1:8077
+
+    defaults:
+      run:
+        working-directory: minimax
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖（pyseekdb / powercontext / pytest）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: 启动 PowerContext Server（SQLite 后端）
+        run: |
+          mkdir -p .ci/powercontext
+          cd .ci/powercontext
+          nohup powercontext server run --no-env-file --host 127.0.0.1 --port 8077 --role all \
+            > ../powercontext.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8077/health/ready > /dev/null; then
+              echo "PowerContext ready"; break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8077/health/ready
+
+      - name: 环境自检（seekdb 后端）
+        run: python -m sddctx doctor
+
+      - name: 模块测试（seekdb 后端）
+        run: python -m pytest tests -q
+
+      - name: 还原到改动前状态（v1 规格 + 未实现 region 过滤）
+        run: |
+          cd ..
+          BASE=$(git log --format=%H --diff-filter=A -- minimax/README.md | tail -1)
+          echo "baseline commit: $BASE"
+          git checkout "$BASE" -- minimax/demo minimax/samples/task-001-report-region-filter/acceptance
+
+      - name: 完整流程（seekdb + PowerContext + MiniMax 冻结输出）
+        working-directory: minimax
+        run: |
+          set -x
+          TASK=samples/task-001-report-region-filter/task.json
+          python -m sddctx import --task "$TASK" --reset
+          python -m sddctx plan --task "$TASK"
+          python -m sddctx spec-apply --task "$TASK"
+          python -m sddctx import --task "$TASK"
+          python -m sddctx plan --task "$TASK"
+          python -m sddctx apply --task "$TASK"
+          python -m sddctx verify --task "$TASK"
+          python -m sddctx save --task "$TASK"
+          python -m sddctx resume --task "$TASK"
+
+      - name: 收集证据
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sddctx-evidence
+          path: |
+            minimax/runs/
+            minimax/.ci/powercontext.log
+          retention-days: 14

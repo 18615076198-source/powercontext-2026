@@ -1,0 +1,12 @@
+{
+  "period": "2026-09",
+  "orders": [
+    {"order_id": "A-1001", "currency": "CNY", "region": "East",  "amount_minor": 128000, "member_tier": "basic",    "coupon_code": null,        "status": "paid",      "paid_on": "2026-09-02"},
+    {"order_id": "A-1002", "currency": "USD", "region": "South", "amount_minor": 42000,  "member_tier": "gold",     "coupon_code": null,        "status": "paid",      "paid_on": "2026-09-05"},
+    {"order_id": "A-1003", "currency": "CNY", "region": "North", "amount_minor": 6600,   "member_tier": "silver",   "coupon_code": "WELCOME10", "status": "paid",      "paid_on": "2026-09-11"},
+    {"order_id": "A-1004", "currency": "CNY", "region": "East",  "amount_minor": 99900,  "member_tier": "basic",    "coupon_code": null,        "status": "cancelled", "paid_on": "2026-09-12"},
+    {"order_id": "A-1005", "currency": "EUR", "region": "East",  "amount_minor": 31500,  "member_tier": "platinum", "coupon_code": "SAVE500",   "status": "paid",      "paid_on": "2026-09-20"},
+    {"order_id": "A-1006", "currency": "CNY", "region": "South", "amount_minor": 4500,   "member_tier": "gold",     "coupon_code": null,        "status": "refunded",  "paid_on": "2026-09-21"},
+    {"order_id": "A-1007", "currency": "USD", "region": "North", "amount_minor": 78000,  "member_tier": "basic",    "coupon_code": null,        "status": "paid",      "paid_on": "2026-10-01"}
+  ]
+}
