@@ -2,10 +2,10 @@
   "skill": "nearby-explorer",
   "version": "1.0.0",
   "zip": "D:\\deepseek\\modelscope-skill\\dist\\nearby-explorer-6f21a799.zip",
-  "bytes": 93765,
-  "sha256": "8d85029cdaade53afa1015bf67b73c80a874de48296a55e1fe17803c2b305fde",
+  "bytes": 93741,
+  "sha256": "2c1265667613a1de21bf8acb4dcf70e14850f6bf43ec36b2e43a8e5c22df32f6",
   "files": 27,
-  "uncompressedBytes": 474320,
+  "uncompressedBytes": 474197,
   "verifyLine": "<!-- OB-S:M_r0kvtpbAVs7fN_BDX7Vg -->",
-  "builtAt": "2026-11-02T17:39:51.467620+00:00"
+  "builtAt": "2026-11-02T17:57:09.419137+00:00"
 }

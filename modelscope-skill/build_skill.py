@@ -59,9 +59,24 @@ def parse_frontmatter(text: str):
     return values
 
 
+def normalize_text_files(staging: Path) -> None:
+    """统一为 LF、去掉 BOM：魔搭的 frontmatter 解析对 CRLF 不友好。"""
+    for path in staging.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() not in {".md", ".py", ".json", ".txt", ".sh"}:
+            continue
+        raw = path.read_bytes()
+        if raw.startswith(b"\xef\xbb\xbf"):
+            raw = raw[3:]
+        if b"\r\n" in raw:
+            raw = raw.replace(b"\r\n", b"\n")
+        path.write_bytes(raw)
+
+
 def append_verify_line(skill_md: Path, line: str) -> None:
     text = skill_md.read_text(encoding="utf-8").rstrip("\n")
-    skill_md.write_text(text + "\n\n" + line + "\n", encoding="utf-8")
+    skill_md.write_text(text + "\n\n" + line + "\n", encoding="utf-8", newline="\n")
 
 
 def stage(verify_line: str) -> Path:
@@ -72,6 +87,7 @@ def stage(verify_line: str) -> Path:
         target,
         ignore=shutil.ignore_patterns(*SKIP_DIRS, "*.pyc", "*.log"),
     )
+    normalize_text_files(target)
     append_verify_line(target / "SKILL.md", verify_line)
     return target
 
