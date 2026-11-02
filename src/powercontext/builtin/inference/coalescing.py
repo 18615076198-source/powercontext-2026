@@ -24,19 +24,26 @@ from typing import Any
 from powercontext.builtin.inference.models import EmbeddingResult, InferenceUsage
 from powercontext.builtin.inference.protocols import EmbeddingModel
 
-_DEFAULT_MAX_BATCH_SIZE = 8
-_DEFAULT_CACHE_SIZE = 256
+_DEFAULT_MAX_BATCH_SIZE = 64
+_DEFAULT_COALESCE_MS = 5.0
+_DEFAULT_CACHE_SIZE = 1024
 
 
 class CoalescingEmbeddingModel:
-    """Batch duplicate and concurrent embeds behind one provider budget."""
+    """Batch duplicate and concurrent embeds behind one provider budget.
+
+    A text is queued once and every caller that asks for it shares the same future, including
+    callers that arrive while the provider request is already running. The shared future is
+    shielded, so cancelling one caller never cancels work the others still wait for, and a
+    failed batch is dropped instead of cached so the next call can retry it.
+    """
 
     def __init__(
         self,
-        base: EmbeddingModel,
+        model: EmbeddingModel,
         *,
         max_batch_size: int = _DEFAULT_MAX_BATCH_SIZE,
-        coalesce_ms: int = 0,
+        coalesce_ms: float = _DEFAULT_COALESCE_MS,
         cache_size: int = _DEFAULT_CACHE_SIZE,
     ) -> None:
         if not isinstance(max_batch_size, int) or isinstance(max_batch_size, bool) or max_batch_size < 1:
@@ -45,17 +52,18 @@ class CoalescingEmbeddingModel:
             raise ValueError("coalesce_ms must be a non-negative number")  # noqa: TRY003
         if not isinstance(cache_size, int) or isinstance(cache_size, bool) or cache_size < 0:
             raise ValueError("cache_size must be a non-negative integer")  # noqa: TRY003
-        self._base = base
+        self._model = model
         self._max_batch_size = max_batch_size
         self._coalesce_seconds = float(coalesce_ms) / 1000.0
         self._cache_size = cache_size
         self._cache: OrderedDict[str, tuple[float, ...]] = OrderedDict()
         self._pending: dict[str, asyncio.Future[tuple[tuple[float, ...], InferenceUsage]]] = {}
+        self._inflight: dict[str, asyncio.Future[tuple[tuple[float, ...], InferenceUsage]]] = {}
         self._drain_task: asyncio.Task[None] | None = None
 
     @property
     def profile(self) -> Any:
-        return self._base.profile
+        return self._model.profile
 
     async def embed(self, texts: Sequence[str]) -> EmbeddingResult:
         """Return one vector per input text in request order."""
@@ -69,7 +77,9 @@ class CoalescingEmbeddingModel:
         for text in values:
             if text in futures or self._cached(text) is not None:
                 continue
-            future = self._pending.get(text)
+            future = self._inflight.get(text)
+            if future is None:
+                future = self._pending.get(text)
             if future is None:
                 future = loop.create_future()
                 future.add_done_callback(_consume)
@@ -120,8 +130,10 @@ class CoalescingEmbeddingModel:
                     del self._pending[text]
                 texts = tuple(text for text, _future in batch)
                 futures = [future for _text, future in batch]
+                for text, future in batch:
+                    self._inflight[text] = future
                 try:
-                    result = await self._base.embed(texts)
+                    result = await self._model.embed(texts)
                     _validate(result, len(texts))
                     self._store(texts, result.vectors)
                 except Exception as error:
@@ -132,6 +144,10 @@ class CoalescingEmbeddingModel:
                     for future, vector in zip(futures, result.vectors, strict=True):
                         if not future.done():
                             future.set_result((vector, result.usage))
+                finally:
+                    for text, future in zip(texts, futures, strict=True):
+                        if self._inflight.get(text) is future:
+                            del self._inflight[text]
         finally:
             self._drain_task = None
 
