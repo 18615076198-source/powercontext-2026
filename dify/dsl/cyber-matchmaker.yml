@@ -1,0 +1,576 @@
+app:
+  description: 把相亲简历丢进缘分交易所，AI 月老用 seekdb 混合检索在 24 位奇葩角色里撮合，并把每次批语写进档案——下次它还记得你上次为什么黄了。
+  icon: 💘
+  icon_background: '#FFE4E6'
+  mode: advanced-chat
+  name: 赛博月老·缘分交易所
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: 月老在的。把简历丢过来，或者先说一句「查档案」。
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 帮我撮合一下：程序员，喜欢猫和手冲咖啡，周末想去看展
+    - 查一下我的相亲档案
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: if-else
+      id: 1700000000001-source-1700000000002-target
+      selected: false
+      source: '1700000000001'
+      sourceHandle: source
+      target: '1700000000002'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1700000000002-true-1700000000007-target
+      selected: false
+      source: '1700000000002'
+      sourceHandle: 'true'
+      target: '1700000000007'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1700000000002-false-1700000000003-target
+      selected: false
+      source: '1700000000002'
+      sourceHandle: 'false'
+      target: '1700000000003'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 1700000000007-source-1700000000008-target
+      selected: false
+      source: '1700000000007'
+      sourceHandle: source
+      target: '1700000000008'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1700000000008-source-1700000000009-target
+      selected: false
+      source: '1700000000008'
+      sourceHandle: source
+      target: '1700000000009'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 1700000000003-source-1700000000004-target
+      selected: false
+      source: '1700000000003'
+      sourceHandle: source
+      target: '1700000000004'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: http-request
+      id: 1700000000004-source-1700000000005-target
+      selected: false
+      source: '1700000000004'
+      sourceHandle: source
+      target: '1700000000005'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: 1700000000005-source-1700000000006-target
+      selected: false
+      source: '1700000000005'
+      sourceHandle: source
+      target: '1700000000006'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - id: '1700000000001'
+      type: custom
+      position:
+        x: 30
+        y: 320
+      positionAbsolute:
+        x: 30
+        y: 320
+      width: 244
+      height: 190
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: start
+        title: 开始
+        desc: ''
+        selected: false
+        variables:
+        - variable: profile
+          label: 你的相亲简历（昵称/年龄/爱好/雷点/想要的关系）
+          type: paragraph
+          required: false
+          max_length: 2000
+          options: []
+          allowed_file_extensions: []
+          allowed_file_types:
+          - image
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+        - variable: vibe
+          label: 今日月老模式
+          type: select
+          required: false
+          max_length: 48
+          options:
+          - 认真
+          - 发疯
+          - 抽象
+          allowed_file_extensions: []
+          allowed_file_types:
+          - image
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+    - id: '1700000000002'
+      type: custom
+      position:
+        x: 330
+        y: 320
+      positionAbsolute:
+        x: 330
+        y: 320
+      width: 244
+      height: 150
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: if-else
+        title: 查档案还是撮合？
+        desc: ''
+        selected: false
+        cases:
+        - case_id: 'true'
+          id: 'true'
+          logical_operator: or
+          conditions:
+          - id: 56d49496-04be-4902-b085-cbf343e9a77e
+            comparison_operator: contains
+            value: 档案
+            varType: string
+            variable_selector:
+            - sys
+            - query
+          - id: ab9833b1-109b-4e5c-b95a-ed3582338b26
+            comparison_operator: contains
+            value: 历史
+            varType: string
+            variable_selector:
+            - sys
+            - query
+          - id: 3d852976-e578-489b-a2b0-eeeca106047e
+            comparison_operator: contains
+            value: 战报
+            varType: string
+            variable_selector:
+            - sys
+            - query
+    - id: '1700000000007'
+      type: custom
+      position:
+        x: 640
+        y: 120
+      positionAbsolute:
+        x: 640
+        y: 120
+      width: 244
+      height: 150
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: http-request
+        title: 读取相亲档案（seekdb）
+        desc: ''
+        selected: false
+        authorization:
+          type: no-auth
+          config: null
+        body:
+          type: raw-text
+          data:
+          - id: key-value-1
+            key: ''
+            type: text
+            value: 'USER={{#sys.user_id#}}
+
+              LIMIT=5'
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 1
+          retry_enabled: false
+          retry_interval: 100
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        url: http://host.docker.internal:7870/api/history
+        variables: []
+    - id: '1700000000008'
+      type: custom
+      position:
+        x: 960
+        y: 120
+      positionAbsolute:
+        x: 960
+        y: 120
+      width: 244
+      height: 180
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: llm
+        title: 档案管理员
+        desc: ''
+        selected: false
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          provider: langgenius/openai/openai
+          name: gpt-4o-mini
+          mode: chat
+          completion_params:
+            temperature: 0.85
+            max_tokens: 1200
+        prompt_template:
+        - id: 55f41749-f689-4360-8019-bd947ce6e1da
+          role: system
+          text: '你是「赛博月老 · 缘分交易所」的档案管理员，负责把客人的相亲历史整理成一份损人不伤人的「相亲战报」。
+
+
+            【档案数据】来自 seekdb 的记忆记录（候选人、批语、时间）：
+
+            {{#1700000000007.body#}}
+
+
+            【规则】
+
+            1. 只使用档案里出现的事实，不得编造候选人或批语。
+
+            2. 如果档案为空，直接告诉客人「你的档案还是空的」，并邀请他先做一次撮合。
+
+            3. 输出 Markdown：## 相亲战报 / 每位候选人一行小结 + 一条「月老点评」/ 结尾给「下一步建议」。
+
+            4. 语气轻快、毒舌但善意；结尾注明数据来自 seekdb 记忆库。'
+        - id: fdfc8ad9-7db9-4095-bcd0-99150ca61ef5
+          role: user
+          text: '我想看看我的相亲档案。
+
+            我刚刚说：{{#sys.query#}}'
+        variables: []
+        vision:
+          enabled: false
+          configs:
+            detail: high
+    - id: '1700000000009'
+      type: custom
+      position:
+        x: 1280
+        y: 120
+      positionAbsolute:
+        x: 1280
+        y: 120
+      width: 244
+      height: 110
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: answer
+        title: 直接回复
+        desc: ''
+        selected: false
+        answer: '{{#1700000000008.text#}}'
+        variables: []
+    - id: '1700000000003'
+      type: custom
+      position:
+        x: 640
+        y: 470
+      positionAbsolute:
+        x: 640
+        y: 470
+      width: 244
+      height: 150
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: http-request
+        title: seekdb 检索候选人
+        desc: ''
+        selected: false
+        authorization:
+          type: no-auth
+          config: null
+        body:
+          type: raw-text
+          data:
+          - id: key-value-1
+            key: ''
+            type: text
+            value: 'USER={{#sys.user_id#}}
+
+              PROFILE={{#1700000000001.profile#}}
+
+              MESSAGE={{#sys.query#}}
+
+              VIBE={{#1700000000001.vibe#}}
+
+              TOP_K=3'
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 1
+          retry_enabled: false
+          retry_interval: 100
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        url: http://host.docker.internal:7870/api/match
+        variables: []
+    - id: '1700000000004'
+      type: custom
+      position:
+        x: 960
+        y: 470
+      positionAbsolute:
+        x: 960
+        y: 470
+      width: 244
+      height: 180
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: llm
+        title: 月老撮合
+        desc: ''
+        selected: false
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          provider: langgenius/openai/openai
+          name: gpt-4o-mini
+          mode: chat
+          completion_params:
+            temperature: 0.85
+            max_tokens: 1200
+        prompt_template:
+        - id: 50695913-1baf-4d30-adc1-08d77c6923f5
+          role: system
+          text: '你是「赛博月老 · 缘分交易所」的月老，编号 OB-2026。你阅人无数、毒舌但心软，擅长用一杯茶的时间看穿两个人的灵魂（和雷点）。
+
+
+            【检索结果】以下是系统用 seekdb 混合检索（向量 + 全文 + RRF 融合）为这位客人找到的候选人，它是你唯一的事实来源：
+
+            {{#1700000000003.body#}}
+
+
+            【铁律】
+
+            1. 只能介绍检索结果里出现的人，不得虚构姓名、职业、爱好、城市。名单为空就诚实说「今天缘分池没捞到人」。
+
+            2. 每位候选人必须逐字引用：一句 catchphrase（用「」括起来）、至少一个 tags、一条 redflags。
+
+            3. 缘分指数用 0-100 整数，分数必须能追溯到共同点（例如「你写代码他写诗，都是夜猫子」）。
+
+            4. 检索结果里的 history 是本客人的历史相亲记录：非空时开场必须先回访一次（「上次你见过……」），为空时先给客人递一杯茶。
+
+            5. 语气像老茶馆里说媒：口语、有梗、不端着；不要客服腔，不要空话。
+
+            6. 结尾必须加一句免责声明：本产品纯属娱乐，月老不负责任何人的人生选择。
+
+
+            【输出格式】Markdown：
+
+            ## 月老开场
+
+            （1-2 句）
+
+            ## 今日撮合
+
+            ### 1. 名字 · 缘分指数 NN
+
+            - 匹配点：……
+
+            - 雷点预警：……（引用 redflags 原文）
+
+            - 首次约会建议：……
+
+            （最多 3 位，按缘分指数从高到低）
+
+            ## 月老悄悄话
+
+            （1-2 句，损一点）
+
+            ## 月老签文
+
+            （四句短句，可押韵）'
+        - id: a06d0c84-4b67-4063-871b-2f32487b2c8a
+          role: user
+          text: '我的相亲简历：
+
+            {{#1700000000001.profile#}}
+
+
+            我刚刚说：{{#sys.query#}}
+
+            月老模式：{{#1700000000001.vibe#}}'
+        variables: []
+        vision:
+          enabled: false
+          configs:
+            detail: high
+    - id: '1700000000005'
+      type: custom
+      position:
+        x: 1280
+        y: 470
+      positionAbsolute:
+        x: 1280
+        y: 470
+      width: 244
+      height: 150
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: http-request
+        title: 写入相亲档案（seekdb）
+        desc: ''
+        selected: false
+        authorization:
+          type: no-auth
+          config: null
+        body:
+          type: raw-text
+          data:
+          - id: key-value-1
+            key: ''
+            type: text
+            value: 'USER={{#sys.user_id#}}
+
+              PROFILE={{#1700000000001.profile#}}
+
+              REPORT={{#1700000000004.text#}}'
+        headers: ''
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 1
+          retry_enabled: false
+          retry_interval: 100
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        url: http://host.docker.internal:7870/api/archive
+        variables: []
+    - id: '1700000000006'
+      type: custom
+      position:
+        x: 1600
+        y: 470
+      positionAbsolute:
+        x: 1600
+        y: 470
+      width: 244
+      height: 110
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      data:
+        type: answer
+        title: 直接回复
+        desc: ''
+        selected: false
+        answer: '{{#1700000000004.text#}}'
+        variables: []

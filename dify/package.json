@@ -1,0 +1,35 @@
+{
+  "name": "cyber-matchmaker",
+  "version": "1.0.0",
+  "description": "赛博月老：Dify + seekdb 的相亲交易所",
+  "main": "index.js",
+  "scripts": {
+    "start": "node service/server.mjs",
+    "seed": "node service/seed.mjs",
+    "workflow": "node tools/run_workflow.mjs",
+    "smoke": "node tools/smoke_api.mjs",
+    "mock-llm": "node tools/mock_llm.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.16.1",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.16.1",
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "4.3.2",
+    "express": "5.3.0",
+    "seekdb": "1.4.0",
+    "yaml": "^2.9.1"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

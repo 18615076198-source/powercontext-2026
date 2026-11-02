@@ -1,0 +1,80 @@
+{
+  "startedAt": "2026-11-02T17:18:36.276Z",
+  "sys": {
+    "user_id": "demo-llm",
+    "query": "帮我撮合一个对象"
+  },
+  "startVars": {
+    "profile": "程序员，喜欢猫和手冲咖啡",
+    "vibe": "认真"
+  },
+  "steps": [
+    {
+      "node": "1700000000001",
+      "type": "start",
+      "title": "开始",
+      "ms": 0
+    },
+    {
+      "node": "1700000000002",
+      "type": "if-else",
+      "title": "查档案还是撮合？",
+      "ms": 0,
+      "detail": {
+        "matched": false,
+        "query": "帮我撮合一个对象"
+      }
+    },
+    {
+      "node": "1700000000003",
+      "type": "http-request",
+      "title": "seekdb 检索候选人",
+      "ms": 132,
+      "detail": {
+        "url": "http://127.0.0.1:7870/api/match",
+        "status": 200,
+        "request": "USER=demo-llm\nPROFILE=程序员，喜欢猫和手冲咖啡\nMESSAGE=帮我撮合一个对象\nVIBE=认真\nTOP_K=3",
+        "responsePreview": "{\"user\":\"demo-llm\",\"mode\":\"hybrid\",\"query_tags\":[\"手冲咖啡\",\"猫\"],\"candidates\":[{\"id\":\"p15\",\"name\":\"程序员诗人·Linus\",\"age\":30,\"city\":\"上海\",\"job\":\"后端开发\",\"tags\":[\"代码\",\"科幻\",\"手冲咖啡\",\"极客\"],\"redflags\":[\"用英文名\",\"聊技术会忘记时间\"],\"catchphrase\":\"你的笑点，可以写成一个正则。\",\"bio\":\"写了十年代码，最近开始写科幻小说。家里三块显示器和一台咖啡机。认为最好的浪漫是一起读源码。周末会去天文馆。\",\"score\":0.0328},{\"id\":\"p22\",\"name\":\"反内卷先锋·阿卷\",\"age\":30,\"city\":\"上海\",\"job\":\"自由设计师\",\"tags\":[\"自由职业\",\"反内卷\",\""
+      }
+    },
+    {
+      "node": "1700000000004",
+      "type": "llm",
+      "title": "月老撮合",
+      "ms": 100,
+      "detail": {
+        "mode": "llm:mock-model",
+        "promptChars": 1551,
+        "outputChars": 180
+      }
+    },
+    {
+      "node": "1700000000005",
+      "type": "http-request",
+      "title": "写入相亲档案（seekdb）",
+      "ms": 670,
+      "detail": {
+        "url": "http://127.0.0.1:7870/api/archive",
+        "status": 200,
+        "request": "USER=demo-llm\nPROFILE=程序员，喜欢猫和手冲咖啡\nREPORT=## 月老开场（mock 模型接线验证）\n茶刚泡上，月老我看你印堂发亮，今天有戏。\n## 今日撮合\n本轮从 seekdb 捞到：名字\n## 月老悄悄话\n这条回复由本地 mock 模型返回，用于证明 Dify 的 LLM 节点调用链、变量替换与证据落盘都工作正常；真实效果请在 Dify 中绑定模型体验。\n## 月老签文\n代码写得再溜，也怕月老一句：你俩不合适。",
+        "responsePreview": "{\"ok\":true,\"id\":\"m-mvziw929\",\"total\":7,\"createdAt\":\"2026-11-02T17:18:36.513Z\"}"
+      }
+    },
+    {
+      "node": "1700000000006",
+      "type": "answer",
+      "title": "直接回复",
+      "ms": 0
+    }
+  ],
+  "answer": "## 月老开场（mock 模型接线验证）\n茶刚泡上，月老我看你印堂发亮，今天有戏。\n## 今日撮合\n本轮从 seekdb 捞到：名字\n## 月老悄悄话\n这条回复由本地 mock 模型返回，用于证明 Dify 的 LLM 节点调用链、变量替换与证据落盘都工作正常；真实效果请在 Dify 中绑定模型体验。\n## 月老签文\n代码写得再溜，也怕月老一句：你俩不合适。",
+  "finishedAt": "2026-11-02T17:18:37.181Z",
+  "visited": [
+    "1700000000001",
+    "1700000000002",
+    "1700000000003",
+    "1700000000004",
+    "1700000000005",
+    "1700000000006"
+  ]
+}
