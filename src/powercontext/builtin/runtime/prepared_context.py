@@ -462,7 +462,12 @@ class PreparedContextBuilder:
                 groups = (
                     tuple(
                         tuple(
-                            self._memory_entries(group.memory_ref, (hit,), scope_id=group.scope_id)
+                            self._memory_entries(
+                                group.memory_ref,
+                                (hit,),
+                                scope_id=group.scope_id,
+                                citation_revisions=group.citation_revisions,
+                            )
                             for hit in group.hits
                         )
                         for group in memory_candidates
@@ -838,9 +843,13 @@ def _selection_documents(
             seen.add(identity)
             if not hit.entry_id.strip() or not hit.entry_version_id.strip() or not hit.text.strip():
                 continue
+            citation_ref = hit.memory_ref
+            revision = (candidates.citation_revisions or {}).get(hit.entry_id)
+            if revision is not None and revision != citation_ref.revision:
+                citation_ref = citation_ref.model_copy(update={"revision": revision})
             documents.append((
                 MemoryEntryAddress(
-                    memory=ArtifactAddress(scope_id=str(scope_id), artifact=hit.memory_ref),
+                    memory=ArtifactAddress(scope_id=str(scope_id), artifact=citation_ref),
                     entry_id=hit.entry_id,
                     entry_version_id=hit.entry_version_id,
                 ),

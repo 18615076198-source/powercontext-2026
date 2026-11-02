@@ -941,7 +941,7 @@ class ScopedContextApplication:
         prepared = await self.prepare(request, authorize_scopes=authorize_scopes)
         content = prepared.content or ""
         if base_pack is None:
-            return ContextPack.from_content(content, chunk_bytes=_INCREMENTAL_CHUNK_BYTES)
+            return ContextPack.from_content(content)
         return _incremental_delta(base_pack, content)
 
     async def _chronologically_ordered(
