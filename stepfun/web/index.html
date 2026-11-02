@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>端侧知识库 · 浏览器向量化 + seekdb 混合检索</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">◈</span>
+        <div>
+          <h1>端侧知识库</h1>
+          <p class="sub">浏览器本地向量化 · seekdb 混合检索（向量 + 全文，库内 RRF 融合）</p>
+        </div>
+      </div>
+      <div class="badges" id="badges">
+        <span class="badge" id="badgeBackend">后端：检测中…</span>
+        <span class="badge" id="badgeDtype">精度：-</span>
+        <span class="badge" id="badgeSize">模型：-</span>
+        <span class="badge" id="badgeSeekdb">seekdb：-</span>
+      </div>
+    </header>
+
+    <section class="panel model-bar">
+      <label>推理后端
+        <select id="deviceSelect">
+          <option value="auto">自动（优先 WebGPU）</option>
+          <option value="webgpu">WebGPU</option>
+          <option value="wasm">WASM</option>
+        </select>
+      </label>
+      <label>模型精度
+        <select id="dtypeSelect">
+          <option value="auto" selected>自动（WebGPU:FP16 / WASM:INT8）</option>
+          <option value="q8">INT8（22.9 MB）</option>
+          <option value="fp16">FP16（45.3 MB）</option>
+          <option value="fp32">FP32（90.5 MB）</option>
+        </select>
+      </label>
+      <button id="btnReload" class="btn">重新加载模型</button>
+      <span class="hint" id="modelStatus">模型加载中…</span>
+    </section>
+
+    <main class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>① 导入语料</h2>
+          <span class="hint" id="docCount">0 个文档</span>
+        </div>
+        <div class="row">
+          <textarea id="pasteBox" rows="5" placeholder="粘贴若干段文本（每段一个文档，空行分隔）…"></textarea>
+        </div>
+        <div class="row controls">
+          <label>切片长度 <input id="chunkSize" type="number" value="320" min="80" max="1200" step="20" /></label>
+          <label>重叠 <input id="chunkOverlap" type="number" value="40" min="0" max="300" step="10" /></label>
+          <label>批大小 <input id="batchSize" type="number" value="8" min="1" max="32" step="1" /></label>
+        </div>
+        <div class="row actions">
+          <button id="btnSample" class="btn">载入示例语料</button>
+          <button id="btnImportPaste" class="btn">导入粘贴文本</button>
+          <button id="btnReset" class="btn ghost">清空知识库</button>
+        </div>
+        <div class="progress" id="importProgress" hidden>
+          <div class="bar"><div class="fill" id="progressFill"></div></div>
+          <span id="progressText"></span>
+        </div>
+        <ul class="doc-list" id="docList"></ul>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>② 混合检索</h2>
+          <span class="hint" id="searchHint">向量召回 + 全文匹配，由 seekdb 一次完成</span>
+        </div>
+        <div class="row search-row">
+          <input id="queryInput" type="text" placeholder="例如：seekdb 怎么做向量和全文的混合检索？" />
+          <label class="topk">Top <input id="topK" type="number" value="5" min="1" max="20" /></label>
+          <button id="btnSearch" class="btn primary">检索</button>
+        </div>
+        <div class="status-line" id="statusLine"></div>
+        <ol class="results" id="results"></ol>
+      </section>
+    </main>
+
+    <section class="panel metrics-panel">
+      <div class="panel-head">
+        <h2>③ 实测指标</h2>
+        <div class="actions">
+          <button id="btnEval" class="btn">跑质量评测（Recall@5 / nDCG@10）</button>
+          <button id="btnExport" class="btn ghost">导出 JSON</button>
+        </div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric"><span class="k">模型加载</span><span class="v" id="mLoad">-</span></div>
+        <div class="metric"><span class="k">文档向量化</span><span class="v" id="mEmbed">-</span></div>
+        <div class="metric"><span class="k">写入 + 索引刷新</span><span class="v" id="mWrite">-</span></div>
+        <div class="metric"><span class="k">查询向量化</span><span class="v" id="mQEmbed">-</span></div>
+        <div class="metric"><span class="k">seekdb 检索</span><span class="v" id="mSearch">-</span></div>
+        <div class="metric"><span class="k">端到端延迟</span><span class="v" id="mE2E">-</span></div>
+        <div class="metric"><span class="k">向量化吞吐</span><span class="v" id="mThroughput">-</span></div>
+        <div class="metric"><span class="k">检索质量</span><span class="v" id="mQuality">-</span></div>
+      </div>
+      <details class="raw">
+        <summary>原始 metrics JSON</summary>
+        <pre id="rawMetrics">{}</pre>
+      </details>
+    </section>
+
+    <footer class="foot">
+      <span>推理位置：浏览器本地（<span id="footBackend">-</span>）· 无云端推理调用</span>
+      <span>存储与检索：seekdb（向量 + 全文，单次 hybridSearch）</span>
+    </footer>
+
+    <script>
+      window.__errors = [];
+      window.addEventListener("error", (e) => window.__errors.push(String(e.message || (e.error && e.error.stack) || e)));
+      window.addEventListener("unhandledrejection", (e) => window.__errors.push("rejection: " + String(e.reason && (e.reason.stack || e.reason.message) || e.reason)));
+    </script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

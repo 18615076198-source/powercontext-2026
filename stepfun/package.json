@@ -1,0 +1,30 @@
+{
+  "name": "stepfun-kb",
+  "version": "1.0.0",
+  "private": true,
+  "description": "端侧 AI 推理（浏览器 WebGPU/WASM）+ seekdb 混合检索的迷你知识库",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.mjs",
+    "prestart": "node scripts/prepare-web.mjs && node scripts/bundle-web.mjs",
+    "setup": "node scripts/prepare-web.mjs && node scripts/bundle-web.mjs",
+    "prepare:web": "node scripts/prepare-web.mjs",
+    "bundle:web": "node scripts/bundle-web.mjs",
+    "fetch-model": "node scripts/fetch-model.mjs",
+    "selftest": "node scripts/selftest-browser.mjs",
+    "verify:seekdb": "node scripts/verify-seekdb.mjs",
+    "bench": "node scripts/benchmark.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.3.2",
+    "express": "5.3.0",
+    "seekdb": "1.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "license": "Apache-2.0"
+}

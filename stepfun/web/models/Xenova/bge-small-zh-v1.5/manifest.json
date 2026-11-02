@@ -1,0 +1,14 @@
+{
+  "model": "Xenova/bge-small-zh-v1.5",
+  "mirror": "https://hf-mirror.com",
+  "files": {
+    "config.json": 716,
+    "tokenizer.json": 439125,
+    "tokenizer_config.json": 367,
+    "special_tokens_map.json": 125,
+    "onnx/model.onnx": 94851877,
+    "onnx/model_fp16.onnx": 47497427,
+    "onnx/model_quantized.onnx": 24010842
+  },
+  "totalBytes": 166800479
+}

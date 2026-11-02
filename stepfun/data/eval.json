@@ -1,0 +1,88 @@
+{
+  "description": "12 条中文查询 + 相关文档标注，用于 Recall@5 / nDCG@10",
+  "queries": [
+    {
+      "query": "seekdb 怎么在一条 SQL 里同时做向量和全文检索",
+      "relevant": [
+        "d04",
+        "d02",
+        "d03"
+      ]
+    },
+    {
+      "query": "浏览器里用 WebGPU 跑 embedding 模型",
+      "relevant": [
+        "d11",
+        "d16"
+      ]
+    },
+    {
+      "query": "INT8 量化会让模型小多少，质量会掉吗",
+      "relevant": [
+        "d13",
+        "d29"
+      ]
+    },
+    {
+      "query": "HNSW 索引是怎么加速向量检索的",
+      "relevant": [
+        "d05"
+      ]
+    },
+    {
+      "query": "RRF 倒数排名融合的公式",
+      "relevant": [
+        "d06",
+        "d27"
+      ]
+    },
+    {
+      "query": "transformers.js 怎么加载本地 ONNX 模型",
+      "relevant": [
+        "d15",
+        "d18"
+      ]
+    },
+    {
+      "query": "WASM 多线程需要什么浏览器条件",
+      "relevant": [
+        "d12",
+        "d17"
+      ]
+    },
+    {
+      "query": "OceanBase 的 LSM-Tree 存储引擎",
+      "relevant": [
+        "d22",
+        "d21"
+      ]
+    },
+    {
+      "query": "RAG 的完整流程是什么",
+      "relevant": [
+        "d20",
+        "d19"
+      ]
+    },
+    {
+      "query": "怎么评估检索效果 Recall@K 和 nDCG",
+      "relevant": [
+        "d25",
+        "d26"
+      ]
+    },
+    {
+      "query": "知识库增量导入后新文档搜不到怎么办",
+      "relevant": [
+        "d31",
+        "d32"
+      ]
+    },
+    {
+      "query": "西湖边适合坐一下午的咖啡馆",
+      "relevant": [
+        "d36"
+      ]
+    }
+  ]
+}

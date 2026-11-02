@@ -1,0 +1,245 @@
+{
+  "name": "端侧知识库示例语料",
+  "documents": [
+    {
+      "id": "d01",
+      "title": "seekdb 是什么",
+      "category": "seekdb",
+      "text": "seekdb 是 OceanBase 推出的嵌入式与服务器双形态数据库，兼容 MySQL 协议。它可以像 SQLite 一样以文件方式嵌入到应用里，也可以通过 2881 端口以 server 方式被多个客户端连接。它同时提供关系表、向量检索和全文检索能力，适合个人知识库、RAG、端侧 AI 等场景。"
+    },
+    {
+      "id": "d02",
+      "title": "seekdb 的向量类型与距离函数",
+      "category": "seekdb",
+      "text": "seekdb 支持 VECTOR(N) 列类型，可以直接存稠密向量，并提供 cosine_distance、l2_distance、inner_product 等距离函数。建表时可以创建 HNSW 向量索引来加速近似最近邻检索。向量索引需要指定维度与距离度量，查询时用 ORDER BY cosine_distance(emb, 查询向量) LIMIT k 就能拿到 top-k。"
+    },
+    {
+      "id": "d03",
+      "title": "seekdb 全文索引与中文分词",
+      "category": "seekdb",
+      "text": "seekdb 支持 FULLTEXT 全文索引，查询语法与 MySQL 一致：MATCH(列名) AGAINST('关键词')。中文需要分词器，seekdb-js 创建 collection 时可以指定 FulltextIndexConfig，选择 ik 分词器并设置 ik_mode 为 smart。全文索引既能过滤也能给命中度打分，是混合检索里的关键词一路。"
+    },
+    {
+      "id": "d04",
+      "title": "单条 SQL 完成向量与全文混合检索",
+      "category": "seekdb",
+      "text": "seekdb 提供 DBMS_HYBRID_SEARCH 能力：在同一条查询里同时给出向量近邻条件和全文匹配条件，由数据库内部完成两路召回与 RRF 融合排序，客户端不需要分别查两次再自己拼合。seekdb-js 的 collection.hybridSearch 就是把 whereDocument 全文条件与 knn 向量条件打包成一次数据库调用。"
+    },
+    {
+      "id": "d05",
+      "title": "HNSW 向量索引原理",
+      "category": "向量检索",
+      "text": "HNSW 是分层可导航小世界图。它把向量组织成多层图结构，上层稀疏用于快速跳跃，底层稠密用于精确近邻。查询从顶层入口点开始贪心搜索，逐层下降，在底层做候选扩展。HNSW 用少量召回率损失换取数量级的延迟下降，参数 M 和 efSearch 分别控制连边数与搜索宽度。"
+    },
+    {
+      "id": "d06",
+      "title": "RRF 倒数排名融合",
+      "category": "检索融合",
+      "text": "RRF（Reciprocal Rank Fusion）把多路检索结果按名次融合，公式是 score = Σ 1/(k + rank_i)，其中 k 通常取 60。它不需要两路分数可比，只看排名，因此特别适合向量检索与全文检索这种分数量纲不同的场景。seekdb 的混合检索默认就用 RRF 做融合。"
+    },
+    {
+      "id": "d07",
+      "title": "seekdb-js 的连接方式",
+      "category": "seekdb",
+      "text": "seekdb-js 支持两种模式：给 path 参数是嵌入式模式，数据库以本地文件运行；给 host、port、user、password 是服务器模式，通过 MySQL 协议连接已部署的 seekdb 或 OceanBase，连接 OceanBase 时还要传 tenant。两种模式共用同一套 collection、query、hybridSearch API。"
+    },
+    {
+      "id": "d08",
+      "title": "seekdb 与 OceanBase 的关系",
+      "category": "seekdb",
+      "text": "seekdb 可以看作 OceanBase 能力的轻量形态，二者 SQL 与协议保持兼容。OceanBase 是分布式多租户版本，适合集群部署；seekdb 更强调单机嵌入式与低门槛。使用 seekdb-js 时，连 OceanBase 只需要额外指定 tenant 参数，其余 API 保持不变。"
+    },
+    {
+      "id": "d09",
+      "title": "向量归一化与余弦相似度",
+      "category": "向量检索",
+      "text": "余弦相似度只看向量方向，不看长度。把向量做 L2 归一化之后，余弦相似度等于点积，计算更省。很多 embedding 模型输出已经归一化，这时检索端可以直接用内积。归一化还能避免长文本向量模长过大带来的分数偏移。"
+    },
+    {
+      "id": "d10",
+      "title": "如何选择 embedding 模型",
+      "category": "向量检索",
+      "text": "选 embedding 模型要看语言、维度、体积与延迟。中文场景常用 bge-small-zh、bge-base-zh、m3e 等；端侧场景优先 24M 到 100M 参数的小模型。维度越高表达能力越强但存储与计算成本越大，512 维是中文小模型的常见选择，384 维多用于英文 MiniLM 系列。"
+    },
+    {
+      "id": "d11",
+      "title": "WebGPU 是什么",
+      "category": "端侧推理",
+      "text": "WebGPU 是浏览器暴露现代 GPU 能力的标准接口，支持计算着色器，可以用来跑神经网络推理。相比 WebGL，它更适合通用计算，能显著加速矩阵乘法。Chrome、Edge 113 之后默认开启，但显卡驱动、无头模式、虚拟机环境都可能拿不到 adapter。"
+    },
+    {
+      "id": "d12",
+      "title": "WASM SIMD 与多线程",
+      "category": "端侧推理",
+      "text": "WebAssembly 提供 SIMD 指令与线程支持。ONNX Runtime Web 的 wasm 后端会加载 ort-wasm-simd-threaded.wasm，利用 SIMD 加速算子，并在支持 SharedArrayBuffer 时开启多线程。多线程需要页面处于 cross-origin isolation 状态，也就是响应头带上 COOP 与 COEP。"
+    },
+    {
+      "id": "d13",
+      "title": "INT8 量化原理",
+      "category": "模型量化",
+      "text": "INT8 量化把浮点权重和激活值映射到 8 位整数，通过 scale 与 zero point 保持数值范围。动态量化在推理时按张量统计范围，不需要校准数据集。INT8 能把模型体积压到约四分之一，矩阵乘可以用整数指令加速，代价是少量精度损失，通常用 Recall@K 或 nDCG 衡量。"
+    },
+    {
+      "id": "d14",
+      "title": "FP16 半精度",
+      "category": "模型量化",
+      "text": "FP16 用 16 位表示浮点数，体积是 FP32 的一半，动态范围仍然够用。GPU 对 FP16 有原生加速，因此 WebGPU 场景常选 FP16。FP16 的精度损失通常小于 INT8，但在 CPU 的 WASM 后端上不一定比 INT8 快，需要实测。"
+    },
+    {
+      "id": "d15",
+      "title": "transformers.js 加载本地模型",
+      "category": "端侧推理",
+      "text": "transformers.js 可以用 pipeline('feature-extraction', 模型名, { dtype, device }) 创建 embedding 管道。把 env.allowRemoteModels 设为 false、env.localModelPath 指向本地目录，就会从自己的静态服务器加载 config.json、tokenizer.json 与 onnx/model_quantized.onnx，不再访问 Hugging Face。"
+    },
+    {
+      "id": "d16",
+      "title": "ONNX Runtime Web 后端",
+      "category": "端侧推理",
+      "text": "ONNX Runtime Web 支持 wasm、webgpu、webnn 等执行后端。wasm 后端兼容性最好，webgpu 后端把算子下发到显卡。选择后端时通常先探测 navigator.gpu.requestAdapter()，可用就用 webgpu，否则退回 wasm，并在界面上明确提示当前后端。"
+    },
+    {
+      "id": "d17",
+      "title": "SharedArrayBuffer 与跨源隔离",
+      "category": "端侧推理",
+      "text": "SharedArrayBuffer 默认被浏览器禁用，只有页面处于跨源隔离状态才可用。开启方式是服务端返回 Cross-Origin-Opener-Policy: same-origin 与 Cross-Origin-Embedder-Policy: require-corp。开启后 WASM 多线程才能工作，模型推理吞吐可以提升数倍。"
+    },
+    {
+      "id": "d18",
+      "title": "模型下载与浏览器缓存",
+      "category": "端侧推理",
+      "text": "端侧应用的首次加载成本主要在模型下载。可以把模型文件放在自己的静态目录，配合 Cache Storage 或 HTTP 强缓存，让第二次访问直接命中本地缓存。模型体积越大首屏越慢，量化能明显缩短首次加载时间。"
+    },
+    {
+      "id": "d19",
+      "title": "文档切片策略",
+      "category": "RAG",
+      "text": "RAG 的切片要把语义完整的段落作为基本单位，常见做法是按标题与段落切分，再按字符数上限合并，块之间保留少量重叠避免语义被截断。块太大检索粒度粗、太小上下文不足，中文场景常用 200 到 500 字，重叠 10% 到 15%。"
+    },
+    {
+      "id": "d20",
+      "title": "RAG 检索增强生成流程",
+      "category": "RAG",
+      "text": "RAG 分为离线与在线两段。离线阶段把文档切片、向量化并写入向量库；在线阶段把用户问题向量化，从库里召回相关片段，拼进提示词交给大模型生成答案。检索质量决定了生成质量，所以要用 Recall@K、nDCG 等指标评估召回。"
+    },
+    {
+      "id": "d21",
+      "title": "OceanBase 分布式架构",
+      "category": "OceanBase",
+      "text": "OceanBase 采用无共享分布式架构，数据按分区打散到多台 OBServer，Paxos 协议保证多副本一致。它把存储与计算解耦，支持在线扩容与故障自动切换，兼容 MySQL 协议，适合金融级高可用场景。"
+    },
+    {
+      "id": "d22",
+      "title": "LSM-Tree 存储引擎",
+      "category": "OceanBase",
+      "text": "LSM-Tree 把随机写转成顺序写：写入先进入内存表 MemTable，写满后冻结并刷盘成 SSTable，后台再合并小文件。它擅长写多读少的场景，配合 Bloom Filter 与块缓存降低读放大。OceanBase 的存储层就借鉴了 LSM 思想。"
+    },
+    {
+      "id": "d23",
+      "title": "多租户资源隔离",
+      "category": "OceanBase",
+      "text": "OceanBase 用租户做资源与数据隔离，每个租户有独立的 CPU、内存配额与副本分布。租户内可以建多个数据库，跨租户默认不可见。这种设计让一套集群同时服务多个业务，降低运维成本。"
+    },
+    {
+      "id": "d24",
+      "title": "SQL 优化器与执行计划",
+      "category": "数据库",
+      "text": "SQL 优化器负责把逻辑计划改写成代价更低的物理计划，包括谓词下推、连接顺序选择、索引选择。执行计划可以通过 EXPLAIN 查看。向量检索场景要关注是否命中向量索引，否则会退化成全表扫描。"
+    },
+    {
+      "id": "d25",
+      "title": "Recall@K 检索评估",
+      "category": "评估",
+      "text": "Recall@K 表示前 K 个结果里命中相关文档的比例，常用 Recall@5、Recall@10。它衡量召回能力，不关心排序位置。计算时需要一份人工标注的相关性集合（qrels），把检索结果与标注对齐后统计。"
+    },
+    {
+      "id": "d26",
+      "title": "nDCG@K 排序质量",
+      "category": "评估",
+      "text": "nDCG 考虑命中位置，越靠前权重越高，并用理想排序做归一化。公式是 DCG@K = Σ rel_i / log2(i+1)，再除以 IDCG@K。它适合比较不同检索策略的排序质量，和 Recall 一起看能同时覆盖召回与排序。"
+    },
+    {
+      "id": "d27",
+      "title": "混合检索的权重与融合策略",
+      "category": "检索融合",
+      "text": "混合检索常见两种融合方式：加权分数融合与排名融合。加权分数需要把向量距离与全文得分归一化到同一量纲，调参成本高；排名融合如 RRF 只看名次，鲁棒性更好。工程上通常先用 RRF 拿到稳定基线，再针对业务调整权重。"
+    },
+    {
+      "id": "d28",
+      "title": "端侧推理与隐私",
+      "category": "端侧推理",
+      "text": "端侧推理把模型和计算都放在用户设备上，原始文档不需要上传到云端，只有向量或检索请求可能离开浏览器。对于个人知识库、医疗、法务等敏感场景，这种架构能显著降低数据泄露风险，也是本题要求本地向量化的原因。"
+    },
+    {
+      "id": "d29",
+      "title": "模型体积与首屏体验",
+      "category": "模型量化",
+      "text": "模型体积直接影响首次加载时间。90MB 的 FP32 模型在 10Mbps 网络下要七十多秒，22.9MB 的 INT8 模型只要十几秒。端侧应用通常提供多档精度，默认用 INT8，高端设备再按需加载 FP16。"
+    },
+    {
+      "id": "d30",
+      "title": "批处理提升向量化吞吐",
+      "category": "性能优化",
+      "text": "逐条推理会浪费算子启动与内存拷贝开销，把多条文本拼成一个 batch 能让 GPU 与 CPU 的流水线更满。批大小受显存与内存限制，端侧常用 8 到 32。批处理还能减少 JavaScript 与 WASM 之间的调用次数。"
+    },
+    {
+      "id": "d31",
+      "title": "知识库增量更新",
+      "category": "性能优化",
+      "text": "增量导入要保证幂等：用内容哈希或文档 ID 加块序号作为主键，重复导入时覆盖而不是插入重复行。新增文档写入后要刷新索引，否则向量索引还没包含新数据，查询会漏掉刚导入的内容。"
+    },
+    {
+      "id": "d32",
+      "title": "写入后的索引刷新",
+      "category": "seekdb",
+      "text": "seekdb 的向量索引在写入后有一个可见性窗口，批量导入完成后调用 refresh_index() 可以立即让新数据可检索。刷新本身有成本，所以策略是批量写、写完后统一刷新一次，而不是每写一条刷新一次。"
+    },
+    {
+      "id": "d33",
+      "title": "集合与会话隔离",
+      "category": "seekdb",
+      "text": "多用户或多知识库场景下，用 collection 做隔离最直接：每个会话一个 collection，会话切换时切换 collection，互不干扰。会话 ID 要校验字符集，避免拼接出非法表名；删除知识库就是删除对应 collection。"
+    },
+    {
+      "id": "d34",
+      "title": "向量数据库选型对比",
+      "category": "向量检索",
+      "text": "选向量库要看部署形态、是否支持混合检索、生态与运维成本。纯向量库通常不擅长结构化过滤与事务；seekdb 这类把关系、向量、全文放在一起的数据库，能在一条 SQL 里做混合检索，减少系统拼接。"
+    },
+    {
+      "id": "d35",
+      "title": "中文文本预处理",
+      "category": "RAG",
+      "text": "中文没有空格，全文检索依赖分词。常见分词器有 ik、jieba、ngram。ik 的 smart 模式会做歧义切分，适合检索；ngram 不依赖词典，召回高但噪音大。向量检索对分词的依赖较小，但清洗掉 HTML 标签、多余空白仍然必要。"
+    },
+    {
+      "id": "d36",
+      "title": "西湖边的咖啡馆",
+      "category": "生活",
+      "text": "西湖边有不少适合坐一下午的咖啡馆，北山街、南山路一带的店大多有临窗位置，安静、有插座，人均四五十元。周末人多，工作日下午比较清净，适合带本书待两小时。"
+    },
+    {
+      "id": "d37",
+      "title": "杭州周末去哪儿",
+      "category": "生活",
+      "text": "杭州周末可以去西湖环湖骑行、灵隐寺、九溪十八涧，或者去良渚古城遗址公园。春天看樱花去太子湾，秋天看银杏去朝晖公园。市区地铁方便，西湖周边建议步行或骑车。"
+    },
+    {
+      "id": "d38",
+      "title": "跑步训练计划",
+      "category": "生活",
+      "text": "入门跑者可以从每周三次、每次三公里开始，配速以能说话为准。两周后增加百分之十的里程，注意跑前热身与跑后拉伸。比赛前两周减量，保证睡眠与碳水摄入。"
+    },
+    {
+      "id": "d39",
+      "title": "咖啡烘焙基础",
+      "category": "生活",
+      "text": "咖啡烘焙分浅烘、中烘、深烘，浅烘保留果酸与花香，深烘突出焦糖与坚果。手冲适合浅中烘，水温 90 到 93 度，粉水比 1 比 15。意式浓缩常用中深烘，萃取时间 25 到 30 秒。"
+    },
+    {
+      "id": "d40",
+      "title": "番茄炒蛋的做法",
+      "category": "生活",
+      "text": "番茄切块、鸡蛋打散加少许盐。热锅冷油先炒鸡蛋，凝固后盛出。再下番茄炒出汁，加糖和盐调味，倒回鸡蛋翻匀，出锅前撒葱花。全程大火，番茄不要炒太久，保持形状。"
+    }
+  ]
+}

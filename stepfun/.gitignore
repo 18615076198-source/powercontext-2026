@@ -1,0 +1,9 @@
+node_modules/
+web/vendor/*.js
+web/vendor/*.wasm
+web/vendor/*.mjs
+web/vendor/manifest.json
+web/models/**/onnx/model.onnx
+web/models/**/onnx/model_fp16.onnx
+*.log
+.DS_Store

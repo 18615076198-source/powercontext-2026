@@ -1,0 +1,173 @@
+{
+  "when": "2026-11-02T16:26:37.104Z",
+  "headless": true,
+  "appUrl": "http://127.0.0.1:7860/",
+  "device": "wasm",
+  "browser": "Edg/156.0.4314.58",
+  "host": {
+    "os": "Windows 11 家庭版",
+    "cpu": "Intel Core Ultra 9 275HX (24 threads)",
+    "gpu": [
+      "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+      "Intel(R) Graphics"
+    ],
+    "memoryGB": 31,
+    "node": "24.21.0",
+    "seekdb": "5.7.25-OceanBase seekdb-v1.4.0.0"
+  },
+  "scenarios": [
+    {
+      "dtype": "q8",
+      "requestedDevice": "wasm",
+      "ok": true,
+      "wallMs": 3056,
+      "effectiveDevice": "wasm",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "dtype": "q8",
+        "dtypeLabel": "INT8",
+        "device": "wasm",
+        "requestedDevice": "wasm",
+        "loadMs": 862,
+        "modelBytes": 24010842,
+        "fallback": null,
+        "webgpu": {
+          "available": false,
+          "reason": "requestAdapter() 返回 null"
+        }
+      },
+      "ingest": {
+        "docs": 40,
+        "chunks": 40,
+        "embedMs": 703,
+        "embedWallMs": 708,
+        "writeMs": 303,
+        "refreshMs": 603,
+        "serverMs": 907,
+        "totalMs": 1626,
+        "chunksPerSec": 24.6
+      },
+      "quality": {
+        "recall5": 0.8611,
+        "ndcg10": 0.8341
+      },
+      "latency": {
+        "runs": 20,
+        "p50": 11.9,
+        "p90": 12.9,
+        "min": 10.5,
+        "max": 13.7
+      },
+      "importRes": {
+        "inserted": 40,
+        "writeMs": 302.8759999871254,
+        "refreshMs": 602.9819999933243,
+        "count": 40,
+        "serverMs": 907
+      },
+      "seekdb": "5.7.25-OceanBase seekdb-v1.4.0.0"
+    },
+    {
+      "dtype": "fp16",
+      "requestedDevice": "wasm",
+      "ok": true,
+      "wallMs": 4404,
+      "effectiveDevice": "wasm",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "dtype": "fp16",
+        "dtypeLabel": "FP16",
+        "device": "wasm",
+        "requestedDevice": "wasm",
+        "loadMs": 1403,
+        "modelBytes": 47497427,
+        "fallback": null,
+        "webgpu": {
+          "available": false,
+          "reason": "requestAdapter() 返回 null"
+        }
+      },
+      "ingest": {
+        "docs": 40,
+        "chunks": 40,
+        "embedMs": 1469,
+        "embedWallMs": 1474,
+        "writeMs": 252,
+        "refreshMs": 603,
+        "serverMs": 856,
+        "totalMs": 2339,
+        "chunksPerSec": 17.1
+      },
+      "quality": {
+        "recall5": 0.9028,
+        "ndcg10": 0.8582
+      },
+      "latency": {
+        "runs": 20,
+        "p50": 15.2,
+        "p90": 16.9,
+        "min": 13.1,
+        "max": 17.3
+      },
+      "importRes": {
+        "inserted": 40,
+        "writeMs": 251.55200004577637,
+        "refreshMs": 603.1159999966621,
+        "count": 40,
+        "serverMs": 856
+      },
+      "seekdb": "5.7.25-OceanBase seekdb-v1.4.0.0"
+    },
+    {
+      "dtype": "fp32",
+      "requestedDevice": "wasm",
+      "ok": true,
+      "wallMs": 5578,
+      "effectiveDevice": "wasm",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "dtype": "fp32",
+        "dtypeLabel": "FP32",
+        "device": "wasm",
+        "requestedDevice": "wasm",
+        "loadMs": 2468,
+        "modelBytes": 94851877,
+        "fallback": null,
+        "webgpu": {
+          "available": false,
+          "reason": "requestAdapter() 返回 null"
+        }
+      },
+      "ingest": {
+        "docs": 40,
+        "chunks": 40,
+        "embedMs": 1292,
+        "embedWallMs": 1295,
+        "writeMs": 293,
+        "refreshMs": 705,
+        "serverMs": 999,
+        "totalMs": 2307,
+        "chunksPerSec": 17.3
+      },
+      "quality": {
+        "recall5": 0.9028,
+        "ndcg10": 0.8582
+      },
+      "latency": {
+        "runs": 20,
+        "p50": 19.2,
+        "p90": 22.1,
+        "min": 15.8,
+        "max": 23.1
+      },
+      "importRes": {
+        "inserted": 40,
+        "writeMs": 293.4800000190735,
+        "refreshMs": 704.6469999551773,
+        "count": 40,
+        "serverMs": 999
+      },
+      "seekdb": "5.7.25-OceanBase seekdb-v1.4.0.0"
+    }
+  ]
+}
