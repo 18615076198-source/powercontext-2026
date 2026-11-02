@@ -346,9 +346,11 @@ async def search_pdf_pages(memory, question: str, limit: int = 10):
     """Return distinct page citations for one natural-language question.
 
     Candidates come from several lexical probes so a page that matches only part of the question
-    is still considered. Ranking uses BM25 over the candidate set with generic finance-term
-    expansion and a preference for the statement pages those questions are answered from, then a
-    small neighbourhood expansion, because a report answer regularly spans adjacent pages.
+    is still considered. When the question names its report, the ranking is scoped to that report
+    so pages from the other reports in the same Memory cannot displace the answer. Inside that
+    scope BM25 adds generic finance-term expansion and a preference for the statement pages these
+    questions are answered from, then the last slots take pages adjacent to the strongest hits
+    because a report answer regularly spans a page boundary.
     """
 
     from powercontext.builtin.artifacts.memory.models import MemoryCitation
@@ -364,12 +366,19 @@ async def search_pdf_pages(memory, question: str, limit: int = 10):
     hits: dict[str, Any] = {}
     for probe in _search_probes(question, terms, expansions):
         page = await memory.search(
-            SearchMemoryRequest(query=probe, mode="fts", limit=max(limit * 10, _MIN_SEARCH_CANDIDATES)),
+            SearchMemoryRequest(query=probe, mode="fts", limit=max(limit * 50, _MIN_SEARCH_CANDIDATES * 4)),
         )
         for hit in page.hits:
             hits.setdefault(hit.entry_id, hit)
     if not hits:
         return ()
+    focus_document = _document_focus(hits, terms)
+    if focus_document is not None:
+        focused_hits = {
+            entry_id: hit for entry_id, hit in hits.items() if _document_id(hit.text) == focus_document
+        }
+        if focused_hits:
+            hits = focused_hits
     if weights:
         documents = {entry_id: _page_tokens(hit.text) for entry_id, hit in hits.items()}
         scores = _bm25_scores(documents, weights)
@@ -517,6 +526,52 @@ def _select_with_neighbors(ranked: list[str], hits: dict[str, Any], limit: int) 
         if len(result) >= limit:
             break
     return result
+
+
+def _document_id(text: str) -> str:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    return lines[0] if lines else ""
+
+
+def _document_focus(hits: dict[str, Any], terms: tuple[str, ...]) -> str | None:
+    """Return the one document the question names, if exactly one candidate document matches.
+
+    The text projection starts with the document id, so a question that names its report can be
+    resolved to that report without any extra metadata. A token is only used when it occurs in a
+    single candidate document id, which keeps shared tokens (years, "10", "k") from deciding.
+    """
+
+    documents: dict[str, set[str]] = {}
+    for hit in hits.values():
+        document = _document_id(hit.text)
+        if document not in documents:
+            documents[document] = set(_page_tokens(document))
+    occurrences: dict[str, int] = {}
+    for tokens in documents.values():
+        for token in tokens:
+            occurrences[token] = occurrences.get(token, 0) + 1
+    query = set(terms)
+    focus = {
+        token
+        for token in query
+        if occurrences.get(token) == 1
+        or any(
+            len(token) >= 4 and token in document_token
+            for document_token in occurrences
+            if document_token != token
+        )
+    }
+    if not focus:
+        return None
+    matched = [
+        document
+        for document, tokens in documents.items()
+        if any(
+            token in tokens or (len(token) >= 4 and any(token in document_token for document_token in tokens))
+            for token in focus
+        )
+    ]
+    return matched[0] if len(matched) == 1 else None
 
 
 def _title_terms(text: str) -> tuple[str, ...]:
