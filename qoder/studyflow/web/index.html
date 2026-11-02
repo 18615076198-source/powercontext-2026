@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StudyFlow · 学习科研工作台</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">S</span><div><strong>StudyFlow</strong><small>学习科研工作台</small></div></div>
+      <div id="status" class="status-pill"><span class="status-dot"></span>连接中</div>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">QODER × POWERCONTEXT</p>
+          <h1>把今天的进展，<em>变成下一次的起点。</em></h1>
+          <p class="hero-copy">记录一个主题，生成下一步行动；把真正重要的偏好、卡点和结论交给上下文，下一次打开就能接着做。</p>
+        </div>
+        <div class="hero-card"><div class="hero-card-label">连续推进</div><strong>25 min</strong><span>专注一小步，也能留下长期记忆。</span></div>
+      </section>
+      <section class="grid">
+        <div class="panel planner">
+          <div class="panel-head"><div><p class="eyebrow">01 · 今日工作台</p><h2>从一个真实主题开始</h2></div><span class="step">PLAN</span></div>
+          <label>主题<input id="topic" value="PowerContext 混合检索" /></label>
+          <label>当前进展<textarea id="progress" rows="4">已经理解了基本概念，但还没把它用到自己的学习资料里。</textarea></label>
+          <div class="chips"><button class="chip active" data-kind="学习">学习</button><button class="chip" data-kind="科研">科研</button><button class="chip" data-kind="工作">工作</button></div>
+          <button id="planBtn" class="primary">生成下一步 <span>→</span></button>
+          <div id="planResult" class="result hidden"></div>
+        </div>
+        <div class="panel memory">
+          <div class="panel-head"><div><p class="eyebrow">02 · 上下文记忆</p><h2>下次继续，不必重来</h2></div><span class="step">MEMORY</span></div>
+          <div class="memory-form"><input id="memoryText" placeholder="例如：我更适合先看结论再看证据" /><button id="saveBtn" class="secondary">保存</button></div>
+          <div id="memoryToast" class="toast hidden"></div>
+          <div class="search-row"><input id="searchText" value="复习" placeholder="检索已保存的记忆" /><button id="searchBtn" class="ghost">检索</button></div>
+          <div id="memoryList" class="memory-list"></div>
+        </div>
+      </section>
+      <section class="panel review-panel">
+        <div class="review-copy"><p class="eyebrow">03 · 复盘闭环</p><h2>给下一次留下一个清晰的入口</h2><p>复盘不是写长总结，只需留下“我完成了什么、卡在哪里、下一次先做什么”。</p></div>
+        <div class="review-form"><input id="reviewText" placeholder="今天完成了什么？卡点是什么？" /><button id="reviewBtn" class="primary">保存复盘 <span>↗</span></button></div>
+        <div id="reviewToast" class="toast hidden"></div>
+      </section>
+    </main>
+    <footer><span>Built with Qoder</span><span>PowerContext 让上下文跟随工作</span></footer>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
+
+
