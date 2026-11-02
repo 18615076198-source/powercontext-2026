@@ -1,0 +1,11 @@
+{
+  "skill": "nearby-explorer",
+  "version": "1.0.0",
+  "zip": "D:\\deepseek\\modelscope-skill\\dist\\nearby-explorer-6f21a799.zip",
+  "bytes": 93765,
+  "sha256": "8d85029cdaade53afa1015bf67b73c80a874de48296a55e1fe17803c2b305fde",
+  "files": 27,
+  "uncompressedBytes": 474320,
+  "verifyLine": "<!-- OB-S:M_r0kvtpbAVs7fN_BDX7Vg -->",
+  "builtAt": "2026-11-02T17:39:51.467620+00:00"
+}

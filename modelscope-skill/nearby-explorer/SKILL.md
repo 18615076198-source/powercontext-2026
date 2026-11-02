@@ -21,7 +21,7 @@ license: MIT
 ## 快速开始
 
 ~~~bash
-pip install -r requirements.txt          # 只依赖 requests；离线模式不需要
+pip install requests                     # 唯一第三方依赖；离线模式无需联网
 
 # 离线模式（无 Key、无网络，使用内置 fixtures 合成样例）
 AMAP_MOCK=1 python scripts/nearby_explorer.py "我在西湖附近，下午想找个安静的咖啡馆坐两小时，最好步行能到"
@@ -101,8 +101,7 @@ Windows PowerShell 用 `$env:AMAP_MOCK='1'` / `$env:AMAP_KEY='...'`。
 ~~~text
 nearby-explorer/
 ├── SKILL.md
-├── README.md
-├── requirements.txt
+├── references/         # README / LICENSE / requirements（说明与许可）
 ├── scripts/            # amap_client / text_parser / recommender / planner / render / nearby_explorer / geo / mock_backend
 ├── fixtures/           # 离线合成样例（samples + mock_world.json）
 ├── tools/              # 生成离线世界 / 录制真实响应 / 解析调试
