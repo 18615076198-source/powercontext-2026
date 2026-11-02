@@ -1,0 +1,33 @@
+{
+  "status": "1",
+  "info": "OK",
+  "infocode": "10000",
+  "route": {
+    "origin": "120.148000,30.245900",
+    "destination": "120.146500,30.247100",
+    "paths": [
+      {
+        "distance": "320",
+        "duration": "274",
+        "steps": [
+          {
+            "instruction": "沿北山街向西步行120米",
+            "orientation": "西",
+            "road": "北山街",
+            "distance": "120",
+            "duration": "100",
+            "polyline": "120.148,30.246;120.147,30.246"
+          },
+          {
+            "instruction": "右转步行200米到达目的地",
+            "orientation": "北",
+            "road": "北山街",
+            "distance": "200",
+            "duration": "174",
+            "polyline": "120.147,30.246;120.1465,30.2471"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "status": "1",
+  "info": "OK",
+  "infocode": "10000",
+  "route": {
+    "origin": "120.148000,30.245900",
+    "destination": "120.161000,30.256000",
+    "taxi_cost": "18.0",
+    "paths": [
+      {
+        "distance": "6200",
+        "duration": "900",
+        "traffic_lights": "6",
+        "steps": [
+          {
+            "instruction": "沿北山街向东行驶1.2公里",
+            "orientation": "东",
+            "road": "北山街",
+            "distance": "1200",
+            "duration": "180",
+            "toll": "0",
+            "toll_distance": "0",
+            "polyline": ""
+          },
+          {
+            "instruction": "沿环城西路向北行驶3.0公里",
+            "orientation": "北",
+            "road": "环城西路",
+            "distance": "3000",
+            "duration": "420",
+            "toll": "0",
+            "toll_distance": "0",
+            "polyline": ""
+          },
+          {
+            "instruction": "到达目的地",
+            "orientation": "北",
+            "road": "",
+            "distance": "2000",
+            "duration": "300",
+            "toll": "0",
+            "toll_distance": "0",
+            "polyline": ""
+          }
+        ]
+      }
+    ]
+  }
+}

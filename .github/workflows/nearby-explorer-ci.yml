@@ -1,0 +1,30 @@
+name: nearby-explorer-ci
+
+on:
+  push:
+    branches: ["2026-competition-gaode"]
+    paths:
+      - "nearby-explorer/**"
+      - "SKILL.md"
+      - ".github/workflows/nearby-explorer-ci.yml"
+  pull_request:
+    paths:
+      - "nearby-explorer/**"
+      - "SKILL.md"
+
+jobs:
+  offline-acceptance:
+    name: offline-acceptance (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 离线验收（无需 Key / 网络）
+        working-directory: nearby-explorer
+        run: bash tests/e2e.sh
