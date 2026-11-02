@@ -18,8 +18,9 @@ from __future__ import annotations
 
 import hashlib
 import io
+import math
 import re
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import quote
 
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -32,6 +33,25 @@ from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY, TextE
 
 PDF_PAGE_SOURCE_NAME = "pdf-page"
 PDF_PAGE_SOURCE_VERSION = "1"
+_MIN_SEARCH_CANDIDATES = 300
+_TITLE_MATCH_BONUS = 2.0
+# Questions that name a statement, table or note reward pages whose heading says so; prose
+# questions ("what do the segment geographies look like") would only be hurt by that prior.
+_STRUCTURE_CUES = frozenset({
+    "statement",
+    "statements",
+    "balance",
+    "sheet",
+    "cash",
+    "flow",
+    "flows",
+    "income",
+    "tables",
+    "table",
+    "note",
+    "notes",
+    "schedule",
+})
 
 _IDENTITY_PREFIX = "pdf"
 _TOKEN = re.compile(r"[a-z0-9]+")
@@ -265,54 +285,102 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
 
 
 async def search_pdf_pages(memory, question: str, limit: int = 10):
-    """Return distinct page citations for one natural-language question."""
+    """Return distinct page citations for one natural-language question.
+
+    Candidates are gathered with several lexical probes so a page that matches only part of
+    the question is still considered, then ranked with BM25 over the candidate set instead of
+    counting question substrings. Questions that name a statement or table also reward pages
+    whose heading carries the same terms, because a statement's heading is the strongest
+    lexical evidence of which page holds it.
+    """
 
     from powercontext.builtin.artifacts.memory.models import MemoryCitation
-    from powercontext.builtin.runtime import GetMemoryEntryRequest, SearchMemoryRequest
+    from powercontext.builtin.runtime import SearchMemoryRequest
 
-    if limit <= 0:
+    if not isinstance(question, str) or limit <= 0:
         return ()
-    candidates: dict[str, tuple[MemoryCitation, str]] = {}
-    for query in _query_variants(question):
-        page = await memory.search(SearchMemoryRequest(query=query, mode="fts", limit=max(limit * 5, 50)))
+    terms = _terms(question)
+    hits: dict[str, Any] = {}
+    for probe in _search_probes(question, terms):
+        page = await memory.search(
+            SearchMemoryRequest(query=probe, mode="fts", limit=max(limit * 10, _MIN_SEARCH_CANDIDATES)),
+        )
         for hit in page.hits:
-            citation = MemoryCitation(
-                memory_ref=hit.memory_ref,
-                entry_id=hit.entry_id,
-                entry_version_id=hit.entry_version_id,
-            )
-            if citation.entry_id in candidates:
-                continue
-            entry = (await memory.get(GetMemoryEntryRequest(citation=citation))).entry
-            candidates[citation.entry_id] = (citation, entry.text)
-
-    terms = _terms(question)
-    ranked = sorted(
-        candidates.values(),
-        key=lambda item: (-_score(terms, item[1]), item[0].entry_id),
-    )
-    return tuple(citation for citation, _text in ranked[:limit])
-
-
-def _query_variants(question: str) -> tuple[str, ...]:
-    terms = _terms(question)
-    variants = [question]
+            hits.setdefault(hit.entry_id, hit)
+    if not hits:
+        return ()
     if terms:
-        variants.append(" ".join(terms))
-    for term in terms[:6]:
-        variants.append(term)
-    return tuple(dict.fromkeys(variants))
+        documents = {entry_id: _page_tokens(hit.text) for entry_id, hit in hits.items()}
+        scores = _bm25_scores(documents, terms)
+        query = set(terms)
+        bonus = _TITLE_MATCH_BONUS if query & _STRUCTURE_CUES else 0.0
+        if bonus:
+            for entry_id, hit in hits.items():
+                scores[entry_id] += bonus * len(query & set(_title_terms(hit.text)))
+    else:
+        scores = {entry_id: float(hit.score) for entry_id, hit in hits.items()}
+    ranked = sorted(hits, key=lambda entry_id: (-scores.get(entry_id, 0.0), entry_id))
+    selected = ranked[:limit]
+    return tuple(
+        MemoryCitation(
+            memory_ref=hits[entry_id].memory_ref,
+            entry_id=hits[entry_id].entry_id,
+            entry_version_id=hits[entry_id].entry_version_id,
+        )
+        for entry_id in selected
+    )
+
+
+def _page_tokens(text: str) -> tuple[str, ...]:
+    return tuple(
+        token for token in _TOKEN.findall(text.lower()) if token not in _QUERY_STOPWORDS and len(token) > 1
+    )
 
 
 def _terms(text: str) -> tuple[str, ...]:
-    tokens = _TOKEN.findall(text.lower())
-    terms = [token for token in tokens if token not in _QUERY_STOPWORDS and len(token) > 1]
-    return tuple(dict.fromkeys(terms))
+    return tuple(dict.fromkeys(_page_tokens(text)))
 
 
-def _score(terms: tuple[str, ...], text: str) -> int:
-    lowered = text.lower()
-    return sum(1 for term in terms if term in lowered)
+def _search_probes(question: str, terms: tuple[str, ...]) -> tuple[str, ...]:
+    probes = [question]
+    if terms:
+        probes.append(" ".join(terms))
+    probes.extend(terms[:8])
+    return tuple(dict.fromkeys(probe for probe in probes if probe.strip()))
+
+
+def _bm25_scores(documents: dict[str, tuple[str, ...]], terms: tuple[str, ...]) -> dict[str, float]:
+    total = len(documents)
+    if total == 0:
+        return {}
+    lengths = {entry_id: len(tokens) for entry_id, tokens in documents.items()}
+    average = sum(lengths.values()) / total or 1.0
+    frequency: dict[str, int] = {}
+    for tokens in documents.values():
+        for token in set(tokens):
+            frequency[token] = frequency.get(token, 0) + 1
+    scores: dict[str, float] = {}
+    for entry_id, tokens in documents.items():
+        occurrences: dict[str, int] = {}
+        for token in tokens:
+            occurrences[token] = occurrences.get(token, 0) + 1
+        score = 0.0
+        for term in terms:
+            count = occurrences.get(term, 0)
+            if count == 0:
+                continue
+            common = frequency.get(term, 0)
+            inverse = math.log(1.0 + (total - common + 0.5) / (common + 0.5))
+            score += inverse * count * 2.2 / (count + 1.2 * (0.25 + 0.75 * lengths[entry_id] / average))
+        scores[entry_id] = score
+    return scores
+
+
+def _title_terms(text: str) -> tuple[str, ...]:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    # The text projection prefixes the document id; the heading starts on the next line.
+    headings = [line for line in lines[1:] if line != "Table of Contents"]
+    return _terms(" ".join(headings[:2]))
 
 
 __all__ = [
