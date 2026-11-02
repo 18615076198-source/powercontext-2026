@@ -845,54 +845,6 @@ class StatisticsApplication:
         )
 
 
-_INCREMENTAL_CHUNK_BYTES = 128
-
-
-def _packed_against_base(base_pack: ContextPack, content: str) -> ContextPack:
-    """Build a target pack that keeps as many of the base pack's chunks as the bytes allow.
-
-    The delta protocol only reuses a leading run of items, so a target that extends the base
-    byte for byte can keep every base chunk and send only the new tail, instead of re-sending
-    the partially different boundary chunk.
-    """
-
-    data = content.encode("utf-8")
-    base_bytes = b"".join(base_pack.items)
-    shared = 0
-    limit = min(len(base_bytes), len(data))
-    while shared < limit and base_bytes[shared] == data[shared]:
-        shared += 1
-    items: list[bytes] = []
-    offset = 0
-    for item in base_pack.items:
-        if offset + len(item) > shared:
-            break
-        items.append(item)
-        offset += len(item)
-    current = bytearray()
-    for character in data[offset:].decode("utf-8"):
-        encoded = character.encode("utf-8")
-        if len(current) + len(encoded) > _INCREMENTAL_CHUNK_BYTES:
-            items.append(bytes(current))
-            current.clear()
-        current.extend(encoded)
-    if current:
-        items.append(bytes(current))
-    return ContextPack.build(items)
-
-
-def _incremental_delta(base_pack: ContextPack, content: str) -> ContextPackDelta:
-    """Send the target suffix that the base pack cannot supply.
-
-    The target pack keeps every base chunk the content still agrees with, so a round that
-    appends content sends only the new tail. The chunk size stays fixed at the incremental
-    chunk size: a round that sent coarser chunks would become the next round base and could
-    no longer be reused at the finer granularity that keeps later deltas small.
-    """
-
-    return ContextPackDelta.between(base_pack, _packed_against_base(base_pack, content))
-
-
 class ScopedContextApplication:
     """Prepare final context for one scope using Runtime-owned source policy."""
 
@@ -939,10 +891,13 @@ class ScopedContextApplication:
         if base_pack is not None and not isinstance(base_pack, ContextPack):
             raise TypeError("base_pack must be a ContextPack")  # noqa: TRY003
         prepared = await self.prepare(request, authorize_scopes=authorize_scopes)
-        content = prepared.content or ""
+        # The target pack is the documented complete pack for the prepared content. Keeping the
+        # canonical chunking means the delta target digest is the same digest a receiver gets
+        # from ContextPack.from_content(content), so reconstruction is verifiable byte for byte.
+        target = ContextPack.from_content(prepared.content or "")
         if base_pack is None:
-            return ContextPack.from_content(content)
-        return _incremental_delta(base_pack, content)
+            return target
+        return ContextPackDelta.between(base_pack, target)
 
     async def _chronologically_ordered(
         self,
