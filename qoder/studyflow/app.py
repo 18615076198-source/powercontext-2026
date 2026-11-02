@@ -71,16 +71,6 @@ class PowerContextAdapter:
             return self.scope_id
         if self.online:
             try:
-                self._request(
-                    "POST",
-                    "/v1/sources/content",
-                    {
-                        "scope_id": scope,
-                        "source_id": f"studyflow-{uuid.uuid4().hex[:10]}",
-                        "content": text,
-                        "metadata": {"app": "studyflow", "kind": kind},
-                    },
-                )
                 result = self._request(
                     "POST",
                     "/v1/scopes",
@@ -107,6 +97,16 @@ class PowerContextAdapter:
         }
         if self.online:
             try:
+                self._request(
+                    "POST",
+                    "/v1/sources/content",
+                    {
+                        "scope_id": scope,
+                        "source_id": f"studyflow-{uuid.uuid4().hex[:10]}",
+                        "content": text,
+                        "metadata": {"app": "studyflow", "kind": kind},
+                    },
+                )
                 result = self._request(
                     "POST",
                     f"/v1/scopes/{scope}/artifacts",
