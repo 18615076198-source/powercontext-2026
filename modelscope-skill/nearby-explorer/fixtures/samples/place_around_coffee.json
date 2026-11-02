@@ -1,0 +1,80 @@
+{
+  "status": "1",
+  "info": "OK",
+  "infocode": "10000",
+  "count": "3",
+  "pois": [
+    {
+      "id": "B0FFSAMPLE001",
+      "name": "拾光咖啡",
+      "type": "餐饮服务;咖啡厅;咖啡厅",
+      "typecode": "050500",
+      "biz_type": "010000",
+      "address": "西湖区北山街12号",
+      "location": "120.146500,30.247100",
+      "tel": "0571-88880000",
+      "distance": "260",
+      "parking_type": "地上停车场",
+      "pname": "浙江省",
+      "cityname": "杭州市",
+      "adname": "西湖区",
+      "biz_ext": {
+        "rating": "4.6",
+        "cost": "45.00",
+        "open_time": "09:00-22:00",
+        "opentime2": "09:00-22:00",
+        "parking_type": "地上停车场",
+        "tag": "安静,可久坐,有插座"
+      },
+      "tag": "安静,可久坐,有插座",
+      "photos": [
+        {
+          "title": "",
+          "url": "https://example.invalid/sample/1.jpg"
+        }
+      ]
+    },
+    {
+      "id": "B0FFSAMPLE002",
+      "name": "星巴克(湖滨店)",
+      "type": "餐饮服务;咖啡厅;咖啡厅",
+      "typecode": "050500",
+      "address": "上城区湖滨路88号",
+      "location": "120.161000,30.256000",
+      "distance": "820",
+      "pname": "浙江省",
+      "cityname": "杭州市",
+      "adname": "上城区",
+      "biz_ext": {
+        "rating": "4.1",
+        "cost": "38.00",
+        "open_time": "07:00-23:00",
+        "opentime2": "07:00-23:00",
+        "tag": "连锁,有座位"
+      },
+      "tag": "连锁,有座位",
+      "photos": []
+    },
+    {
+      "id": "B0FFSAMPLE003",
+      "name": "慢岛咖啡",
+      "type": "餐饮服务;咖啡厅;咖啡厅",
+      "typecode": "050500",
+      "address": "西湖区杨公堤3号",
+      "location": "120.140000,30.242000",
+      "distance": "950",
+      "pname": "浙江省",
+      "cityname": "杭州市",
+      "adname": "西湖区",
+      "biz_ext": {
+        "rating": "",
+        "cost": "60.00",
+        "open_time": "10:00-19:00",
+        "opentime2": "10:00-19:00",
+        "tag": "安静"
+      },
+      "tag": "安静",
+      "photos": []
+    }
+  ]
+}

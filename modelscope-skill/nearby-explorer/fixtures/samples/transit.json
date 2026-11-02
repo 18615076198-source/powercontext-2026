@@ -1,0 +1,67 @@
+{
+  "status": "1",
+  "info": "OK",
+  "infocode": "10000",
+  "route": {
+    "origin": "120.148000,30.245900",
+    "destination": "120.161000,30.256000",
+    "distance": "5200",
+    "taxi_cost": "18.0",
+    "transits": [
+      {
+        "cost": "4.0",
+        "duration": "1980",
+        "nightflag": "0",
+        "walking_distance": "900",
+        "distance": "5200",
+        "missing_lines": 0,
+        "segments": [
+          {
+            "walking": {
+              "origin": "120.148,30.2459",
+              "destination": "120.152,30.250",
+              "distance": "600",
+              "duration": "480",
+              "steps": []
+            },
+            "bus": {
+              "buslines": []
+            }
+          },
+          {
+            "bus": {
+              "buslines": [
+                {
+                  "departure_stop": {
+                    "name": "西湖文化广场"
+                  },
+                  "arrival_stop": {
+                    "name": "凤起路"
+                  },
+                  "name": "地铁1号线(湘湖--临平)",
+                  "type": "地铁线路",
+                  "distance": "4200",
+                  "duration": "1200",
+                  "via_num": "4",
+                  "via_stops": []
+                }
+              ]
+            }
+          },
+          {
+            "walking": {
+              "origin": "",
+              "destination": "120.161,30.256",
+              "distance": "300",
+              "duration": "300",
+              "steps": []
+            },
+            "bus": {
+              "buslines": []
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
