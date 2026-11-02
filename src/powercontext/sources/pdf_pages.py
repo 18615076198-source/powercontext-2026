@@ -34,24 +34,72 @@ from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY, TextE
 PDF_PAGE_SOURCE_NAME = "pdf-page"
 PDF_PAGE_SOURCE_VERSION = "1"
 _MIN_SEARCH_CANDIDATES = 300
-_TITLE_MATCH_BONUS = 2.0
-# Questions that name a statement, table or note reward pages whose heading says so; prose
-# questions ("what do the segment geographies look like") would only be hurt by that prior.
-_STRUCTURE_CUES = frozenset({
+_EXPANSION_WEIGHT = 0.7
+_STATEMENT_BONUS_ADD = 0.3
+_TITLE_MATCH_WEIGHT = 0.2
+_NEIGHBOR_SLOTS = 2
+# Statement questions are normally answered from a financial statement page, whose title is the
+# strongest reliable signal that the page is the statement itself.
+_FINANCE_CUES = frozenset({
     "statement",
     "statements",
     "balance",
     "sheet",
+    "income",
     "cash",
     "flow",
     "flows",
-    "income",
-    "tables",
-    "table",
-    "note",
-    "notes",
-    "schedule",
+    "revenue",
+    "revenues",
+    "margin",
+    "margins",
+    "operating",
+    "ebitda",
+    "ratio",
+    "liquidity",
+    "liabilities",
+    "assets",
+    "equity",
+    "tax",
+    "expense",
+    "expenses",
+    "capex",
+    "capital",
+    "depreciation",
+    "amortization",
 })
+_STATEMENT_TITLE_TERMS = frozenset({
+    "statement",
+    "statements",
+    "balance",
+    "sheet",
+    "income",
+    "cash",
+    "flows",
+    "flow",
+    "operations",
+})
+# Generic finance vocabulary maps a question's wording onto the wording a report uses for the
+# same section. It never reads a document, an answer, or a gold page.
+_EXPANSIONS = (
+    ("geograph", ("geographic",)),
+    ("legal", ("litigation", "proceedings")),
+    ("quick ratio", ("current assets", "current liabilities")),
+    ("liquidity", ("current assets", "current liabilities")),
+    ("gross margin", ("gross profit", "cost of sales", "income statement")),
+    ("operating margin", ("operating income", "income statement")),
+    ("ebitda", ("operating income", "depreciation", "amortization")),
+    ("capex", ("capital expenditures",)),
+    ("capital-intensive", ("capital expenditures", "property plant")),
+    ("effective tax rate", ("income taxes", "tax rate")),
+    ("liabilit", ("balance sheets", "liabilities")),
+    ("retain", ("retention",)),
+    ("concentration", ("concentration",)),
+    ("acquisition", ("acquisitions", "divestitures")),
+    ("segment", ("segments",)),
+    ("product", ("products", "services")),
+    ("restructuring", ("restructuring", "impairment")),
+)
 
 _IDENTITY_PREFIX = "pdf"
 _TOKEN = re.compile(r"[a-z0-9]+")
@@ -235,14 +283,24 @@ PDF_PAGE_SOURCE_DEFINITION: SourceDefinition[PDFPageInput, PDFPageSource, PDFPag
 
 
 def pdf_page_source_id(document_id: str, document_sha256: str, page_number: int) -> str:
-    """Encode one page identity so a new revision never collides with the old one."""
+    """Encode one page identity so a new revision never collides with the old one.
+
+    A readable quoted document id is used while it keeps the identity inside the Source id
+    limit. Longer ids (and ids that expand under percent-encoding) are replaced by the SHA-256
+    of the id, which keeps the identity stable, collision-resistant and at most 256 characters
+    instead of rejecting a legal document.
+    """
 
     if not isinstance(page_number, int) or page_number < 1:
         raise ValueError("page_number must be a positive integer")  # noqa: TRY003
     identity = ":".join(
-        (_IDENTITY_PREFIX, quote(document_id, safe=""), document_sha256, str(page_number)),
+        (_IDENTITY_PREFIX, quote(str(document_id), safe=""), document_sha256, str(page_number)),
     )
-    if len(identity) > MAX_SOURCE_ID_LENGTH:
+    if len(identity) <= MAX_SOURCE_ID_LENGTH:
+        return identity
+    hashed = hashlib.sha256(str(document_id).encode("utf-8")).hexdigest()
+    identity = ":".join((_IDENTITY_PREFIX, hashed, document_sha256, str(page_number)))
+    if len(identity) > MAX_SOURCE_ID_LENGTH:  # pragma: no cover - fixed width digest and page number
         raise ValueError(f"source_id must not exceed {MAX_SOURCE_ID_LENGTH} characters")  # noqa: TRY003
     return identity
 
@@ -287,11 +345,10 @@ def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
 async def search_pdf_pages(memory, question: str, limit: int = 10):
     """Return distinct page citations for one natural-language question.
 
-    Candidates are gathered with several lexical probes so a page that matches only part of
-    the question is still considered, then ranked with BM25 over the candidate set instead of
-    counting question substrings. Questions that name a statement or table also reward pages
-    whose heading carries the same terms, because a statement's heading is the strongest
-    lexical evidence of which page holds it.
+    Candidates come from several lexical probes so a page that matches only part of the question
+    is still considered. Ranking uses BM25 over the candidate set with generic finance-term
+    expansion and a preference for the statement pages those questions are answered from, then a
+    small neighbourhood expansion, because a report answer regularly spans adjacent pages.
     """
 
     from powercontext.builtin.artifacts.memory.models import MemoryCitation
@@ -300,8 +357,12 @@ async def search_pdf_pages(memory, question: str, limit: int = 10):
     if not isinstance(question, str) or limit <= 0:
         return ()
     terms = _terms(question)
+    expansions = _expansion_terms(question)
+    weights: dict[str, float] = {term: 1.0 for term in terms}
+    for term in expansions:
+        weights[term] = max(weights.get(term, 0.0), _EXPANSION_WEIGHT)
     hits: dict[str, Any] = {}
-    for probe in _search_probes(question, terms):
+    for probe in _search_probes(question, terms, expansions):
         page = await memory.search(
             SearchMemoryRequest(query=probe, mode="fts", limit=max(limit * 10, _MIN_SEARCH_CANDIDATES)),
         )
@@ -309,18 +370,24 @@ async def search_pdf_pages(memory, question: str, limit: int = 10):
             hits.setdefault(hit.entry_id, hit)
     if not hits:
         return ()
-    if terms:
+    if weights:
         documents = {entry_id: _page_tokens(hit.text) for entry_id, hit in hits.items()}
-        scores = _bm25_scores(documents, terms)
-        query = set(terms)
-        bonus = _TITLE_MATCH_BONUS if query & _STRUCTURE_CUES else 0.0
-        if bonus:
-            for entry_id, hit in hits.items():
-                scores[entry_id] += bonus * len(query & set(_title_terms(hit.text)))
+        scores = _bm25_scores(documents, weights)
+        peak = max(scores.values()) or 1.0
+        scores = {entry_id: value / peak for entry_id, value in scores.items()}
+        query = set(terms) | set(expansions)
+        finance = bool(set(terms) & _FINANCE_CUES)
+        for entry_id, hit in hits.items():
+            title = set(_title_terms(hit.text))
+            if finance and title & _STATEMENT_TITLE_TERMS:
+                scores[entry_id] += _STATEMENT_BONUS_ADD
+            matched = len(query & title)
+            if matched >= 2:
+                scores[entry_id] *= 1.0 + _TITLE_MATCH_WEIGHT * matched
     else:
         scores = {entry_id: float(hit.score) for entry_id, hit in hits.items()}
     ranked = sorted(hits, key=lambda entry_id: (-scores.get(entry_id, 0.0), entry_id))
-    selected = ranked[:limit]
+    selected = _select_with_neighbors(ranked, hits, limit)
     return tuple(
         MemoryCitation(
             memory_ref=hits[entry_id].memory_ref,
@@ -341,15 +408,26 @@ def _terms(text: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(_page_tokens(text)))
 
 
-def _search_probes(question: str, terms: tuple[str, ...]) -> tuple[str, ...]:
+def _expansion_terms(question: str) -> tuple[str, ...]:
+    lowered = question.lower()
+    terms: list[str] = []
+    for marker, phrases in _EXPANSIONS:
+        if marker in lowered:
+            for phrase in phrases:
+                terms.extend(_terms(phrase))
+    return tuple(dict.fromkeys(terms))
+
+
+def _search_probes(question: str, terms: tuple[str, ...], expansions: tuple[str, ...]) -> tuple[str, ...]:
     probes = [question]
     if terms:
         probes.append(" ".join(terms))
-    probes.extend(terms[:8])
+    probes.extend(terms[:10])
+    probes.extend(expansions[:10])
     return tuple(dict.fromkeys(probe for probe in probes if probe.strip()))
 
 
-def _bm25_scores(documents: dict[str, tuple[str, ...]], terms: tuple[str, ...]) -> dict[str, float]:
+def _bm25_scores(documents: dict[str, tuple[str, ...]], weights: dict[str, float]) -> dict[str, float]:
     total = len(documents)
     if total == 0:
         return {}
@@ -365,15 +443,80 @@ def _bm25_scores(documents: dict[str, tuple[str, ...]], terms: tuple[str, ...]) 
         for token in tokens:
             occurrences[token] = occurrences.get(token, 0) + 1
         score = 0.0
-        for term in terms:
+        for term, weight in weights.items():
             count = occurrences.get(term, 0)
             if count == 0:
                 continue
             common = frequency.get(term, 0)
             inverse = math.log(1.0 + (total - common + 0.5) / (common + 0.5))
-            score += inverse * count * 2.2 / (count + 1.2 * (0.25 + 0.75 * lengths[entry_id] / average))
+            score += weight * inverse * count * 2.2 / (count + 1.2 * (0.25 + 0.75 * lengths[entry_id] / average))
         scores[entry_id] = score
     return scores
+
+
+def _document_page(text: str) -> tuple[str, int] | None:
+    """Read the document id and the printed page number a captured page carries."""
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) < 2:
+        return None
+    last = lines[-1]
+    if not last.isdigit() or len(last) > 4:
+        return None
+    return lines[0], int(last)
+
+
+def _select_with_neighbors(ranked: list[str], hits: dict[str, Any], limit: int) -> list[str]:
+    """Fill the last slots of the result with pages adjacent to the strongest hits."""
+
+    if limit <= 1 or len(ranked) <= limit:
+        return list(ranked[:limit])
+    slots = min(_NEIGHBOR_SLOTS, limit - 1)
+    pages: dict[tuple[str, int], str] = {}
+    page_of: dict[str, tuple[str, int]] = {}
+    for entry_id in ranked:
+        location = _document_page(hits[entry_id].text)
+        if location is None:
+            continue
+        page_of[entry_id] = location
+        pages.setdefault(location, entry_id)
+    base = ranked[: limit - slots]
+    in_base = set(base)
+    extra: list[str] = []
+    for entry_id in ranked[:6]:
+        location = page_of.get(entry_id)
+        if location is None:
+            continue
+        document, number = location
+        for offset in (1, -1, 2, -2):
+            candidate = pages.get((document, number + offset))
+            if candidate is not None and candidate not in in_base and candidate not in extra:
+                extra.append(candidate)
+                if len(extra) >= slots:
+                    break
+        if len(extra) >= slots:
+            break
+    selected = [*base, *extra]
+    seen_entries = set(selected)
+    if len(selected) < limit:
+        for entry_id in ranked:
+            if len(selected) >= limit:
+                break
+            if entry_id not in seen_entries:
+                selected.append(entry_id)
+                seen_entries.add(entry_id)
+    result: list[str] = []
+    seen_pages: set[object] = set()
+    for entry_id in selected:
+        location = page_of.get(entry_id)
+        key: object = ("page", location) if location is not None else ("entry", entry_id)
+        if key in seen_pages:
+            continue
+        seen_pages.add(key)
+        result.append(entry_id)
+        if len(result) >= limit:
+            break
+    return result
 
 
 def _title_terms(text: str) -> tuple[str, ...]:
