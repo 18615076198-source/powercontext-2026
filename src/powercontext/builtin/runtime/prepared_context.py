@@ -145,10 +145,6 @@ class PreparedMemoryCandidates:
     scope_id: str
     memory_ref: ArtifactRef | None = None
     hits: tuple[MemoryHit, ...] = ()
-    # Entry id -> the Memory revision that introduced that exact entry version. Rendering cites
-    # that revision so an already sent context prefix stays byte-identical while later turns
-    # create new Memory revisions.
-    citation_revisions: dict[str, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -409,7 +405,6 @@ class PreparedContextBuilder:
                     candidates.memory_ref,
                     candidates.hits,
                     scope_id=None if candidates.scope_id == current_scope_id else candidates.scope_id or None,
-                    citation_revisions=candidates.citation_revisions,
                 )
                 for candidates in memory_candidates
             )
@@ -462,12 +457,7 @@ class PreparedContextBuilder:
                 groups = (
                     tuple(
                         tuple(
-                            self._memory_entries(
-                                group.memory_ref,
-                                (hit,),
-                                scope_id=group.scope_id,
-                                citation_revisions=group.citation_revisions,
-                            )
+                            self._memory_entries(group.memory_ref, (hit,), scope_id=group.scope_id)
                             for hit in group.hits
                         )
                         for group in memory_candidates
@@ -541,7 +531,6 @@ class PreparedContextBuilder:
         hits: Sequence[MemoryHit],
         *,
         scope_id: str | None = None,
-        citation_revisions: dict[str, int] | None = None,
     ) -> tuple[_PreparedContextEntry, ...]:
         if hits and memory_ref is None:
             raise PreparedContextInvariantError("memory-ref-missing")
@@ -557,19 +546,15 @@ class PreparedContextBuilder:
             seen.add(citation_key)
             if not hit.entry_id.strip() or not hit.entry_version_id.strip() or not hit.text.strip():
                 continue
-            citation_ref = hit.memory_ref
-            revision = (citation_revisions or {}).get(hit.entry_id)
-            if revision is not None and revision != citation_ref.revision:
-                citation_ref = citation_ref.model_copy(update={"revision": revision})
             citation = MemoryCitation(
-                memory_ref=citation_ref,
+                memory_ref=hit.memory_ref,
                 entry_id=hit.entry_id,
                 entry_version_id=hit.entry_version_id,
             )
             origin: PreparedContextOrigin = citation
             rendered_citation = citation.model_dump(mode="json")
             if scope_id is not None:
-                memory = ArtifactAddress(scope_id=scope_id, artifact=citation_ref)
+                memory = ArtifactAddress(scope_id=scope_id, artifact=hit.memory_ref)
                 origin = MemoryEntryAddress(
                     memory=memory,
                     entry_id=hit.entry_id,
@@ -843,13 +828,9 @@ def _selection_documents(
             seen.add(identity)
             if not hit.entry_id.strip() or not hit.entry_version_id.strip() or not hit.text.strip():
                 continue
-            citation_ref = hit.memory_ref
-            revision = (candidates.citation_revisions or {}).get(hit.entry_id)
-            if revision is not None and revision != citation_ref.revision:
-                citation_ref = citation_ref.model_copy(update={"revision": revision})
             documents.append((
                 MemoryEntryAddress(
-                    memory=ArtifactAddress(scope_id=str(scope_id), artifact=citation_ref),
+                    memory=ArtifactAddress(scope_id=str(scope_id), artifact=hit.memory_ref),
                     entry_id=hit.entry_id,
                     entry_version_id=hit.entry_version_id,
                 ),

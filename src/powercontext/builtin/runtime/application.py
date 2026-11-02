@@ -899,53 +899,6 @@ class ScopedContextApplication:
             return target
         return ContextPackDelta.between(base_pack, target)
 
-    async def _chronologically_ordered(
-        self,
-        candidates: Sequence[PreparedMemoryCandidates],
-    ) -> tuple[PreparedMemoryCandidates, ...]:
-        """Order recalled Memory entries by when they entered the Memory.
-
-        The incremental protocol can only reuse a leading run of pack chunks, so an entry that
-        lands between older ones pushes every later chunk into the next delta. Ordering by
-        creation keeps an earlier round prefix intact and appends newly captured entries at the
-        tail, which is also the order the conversation reads in. Ordering is best effort: if the
-        entries cannot be listed, the recalled hits keep their retrieval order.
-        """
-
-        ordered: list[PreparedMemoryCandidates] = []
-        for group in candidates:
-            if len(group.hits) < 2:
-                ordered.append(group)
-                continue
-            try:
-                page = await self._runtime.memory.for_scope(group.scope_id).list()
-            except Exception:
-                ordered.append(group)
-                continue
-            ranked = sorted(
-                page.entries,
-                key=lambda record: (
-                    record.entry.created_in_revision,
-                    record.entry.version,
-                    record.entry.entry_id,
-                ),
-            )
-            position = {record.entry.entry_id: index for index, record in enumerate(ranked)}
-            created = {record.entry.entry_id: record.entry.created_in_revision for record in ranked}
-            ordered.append(
-                replace(
-                    group,
-                    hits=tuple(
-                        sorted(
-                            group.hits,
-                            key=lambda hit: (position.get(hit.entry_id, len(position)), hit.entry_id),
-                        ),
-                    ),
-                    citation_revisions=created,
-                ),
-            )
-        return tuple(ordered)
-
     async def _prepare(self, request: PrepareContextRequest, scope: ScopeDescriptor, /) -> PreparedContext:
         build, effort = await self._prepare_build(request, scope)
         if effort is not None and self._runtime._recall_effort_sink is not None:
@@ -1060,7 +1013,6 @@ class ScopedContextApplication:
                 topic_reuse=topic_reuse,
                 round_zero=round_zero,
             )
-        memory_candidates = await self._chronologically_ordered(memory_candidates)
         code = await self._code_candidates(request) if request.include_code else ()
         with self._runtime._stage(
             "context.build",
