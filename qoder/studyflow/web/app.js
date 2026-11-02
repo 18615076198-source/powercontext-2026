@@ -1,11 +1,34 @@
 const $ = (id) => document.getElementById(id);
 const state = { kind: '学习' };
 
+const localMemoryKey = 'studyflow-memories';
+function localMemories() { return JSON.parse(localStorage.getItem(localMemoryKey) || '[]'); }
+function saveLocalMemories(items) { localStorage.setItem(localMemoryKey, JSON.stringify(items)); }
+function offlineResponse(path, options = {}) {
+  const body = options.body ? JSON.parse(options.body) : {};
+  const memories = localMemories();
+  if (path.startsWith('/api/context')) {
+    const query = decodeURIComponent(path.split('?q=')[1] || '').toLowerCase();
+    return { items: memories.filter((item) => !query || item.text.toLowerCase().includes(query)), online: false, mode: '浏览器演示模式', memory_count: memories.length };
+  }
+  if (path === '/api/plan') {
+    const topic = body.topic || '未命名主题';
+    return { topic, actions: [`用 25 分钟补齐“${topic}”的一个关键概念，并写下 3 句自己的解释。`, `把当前进展“${(body.progress || '').slice(0, 42)}”拆成一个可验证的小问题。`, '在今天结束前做一次 5 分钟复盘，记录卡点和下一次开始的位置。'], context: memories, online: false, mode: '浏览器演示模式' };
+  }
+  if (path === '/api/remember' || path === '/api/review') {
+    const text = path === '/api/review' ? `复盘｜${body.topic || '学习主题'}：${body.note || ''}` : body.text;
+    const item = { id: `browser-${Date.now()}`, kind: body.kind || 'review', text, source: '浏览器本地存储', created_at: new Date().toISOString() };
+    saveLocalMemories([item, ...memories]);
+    return { item, message: '复盘已保存，下一次可以从这里继续。', online: false, mode: '浏览器演示模式', memory_count: memories.length + 1 };
+  }
+  return { online: false, mode: '浏览器演示模式', memory_count: memories.length };
+}
 async function request(path, options = {}) {
-  const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || '请求失败');
-  return data;
+  try {
+    const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+    if (!response.ok) return offlineResponse(path, options);
+    return await response.json();
+  } catch { return offlineResponse(path, options); }
 }
 
 function showToast(node, text) { node.textContent = text; node.classList.remove('hidden'); setTimeout(() => node.classList.add('hidden'), 4200); }
