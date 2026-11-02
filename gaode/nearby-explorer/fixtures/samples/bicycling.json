@@ -1,0 +1,17 @@
+{
+  "status": "1",
+  "info": "OK",
+  "infocode": "10000",
+  "data": {
+    "origin": "120.148000,30.245900",
+    "destination": "120.161000,30.256000",
+    "paths": [
+      {
+        "distance": "1700",
+        "duration": "420",
+        "steps": [],
+        "restriction": "0"
+      }
+    ]
+  }
+}

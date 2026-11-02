@@ -1,0 +1,37 @@
+{
+  "10001": {
+    "status": "0",
+    "info": "INVALID_USER_KEY",
+    "infocode": "10001"
+  },
+  "10003": {
+    "status": "0",
+    "info": "DAILY_QUERY_OVER_LIMIT",
+    "infocode": "10003"
+  },
+  "10004": {
+    "status": "0",
+    "info": "ACCESS_TOO_FREQUENT",
+    "infocode": "10004"
+  },
+  "10009": {
+    "status": "0",
+    "info": "USERKEY_PLAT_NOMATCH",
+    "infocode": "10009"
+  },
+  "20000": {
+    "status": "0",
+    "info": "INVALID_PARAMS",
+    "infocode": "20000"
+  },
+  "20802": {
+    "status": "0",
+    "info": "TOO_CLOSE",
+    "infocode": "20802"
+  },
+  "20803": {
+    "status": "0",
+    "info": "OUT_OF_RANGE",
+    "infocode": "20803"
+  }
+}

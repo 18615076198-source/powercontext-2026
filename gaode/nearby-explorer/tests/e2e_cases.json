@@ -1,0 +1,68 @@
+{
+  "description": "端到端用例：10 条中文语句，覆盖单类目 / 跨类目 / 预算 / 时长 / 公共交通 / 相对位置 / 偏远地点等场景。e2e_check.py 与 record_fixtures.py 共用。",
+  "cases": [
+    {
+      "id": "coffee_walk",
+      "query": "我在西湖附近，下午想找个安静的咖啡馆坐两小时，最好步行能到",
+      "origin": null,
+      "default_city": "杭州市"
+    },
+    {
+      "id": "coffee_rating_budget",
+      "query": "北京国贸附近评分4.5以上的咖啡馆，人均50以内",
+      "origin": null,
+      "default_city": null
+    },
+    {
+      "id": "park_relative",
+      "query": "离我1公里内找个公园",
+      "origin": [
+        120.148,
+        30.2459
+      ],
+      "default_city": "杭州市"
+    },
+    {
+      "id": "night_snack",
+      "query": "我在解放路附近找个夜宵",
+      "origin": null,
+      "default_city": "杭州市"
+    },
+    {
+      "id": "study_room",
+      "query": "帮我找五道口附近的自习室",
+      "origin": null,
+      "default_city": null
+    },
+    {
+      "id": "explore",
+      "query": "国贸附近有什么好玩的",
+      "origin": null,
+      "default_city": null
+    },
+    {
+      "id": "mall_parking",
+      "query": "我在西湖文化广场附近，想找个能停车、有电梯的商场，开车去",
+      "origin": null,
+      "default_city": "杭州市"
+    },
+    {
+      "id": "transit_museum",
+      "query": "从天安门出发去国家博物馆，坐地铁",
+      "origin": null,
+      "default_city": null
+    },
+    {
+      "id": "shanghai_coffee",
+      "query": "我在南京西路附近想喝杯咖啡",
+      "origin": null,
+      "default_city": null
+    },
+    {
+      "id": "hotpot_budget",
+      "query": "我在春熙路附近想吃火锅，人均100以内",
+      "origin": null,
+      "default_city": null
+    }
+  ]
+}
