@@ -6,3 +6,4 @@ data/cache/
 data/papers/*.tmp
 frontend/.vite/
 node_modules/
+docs/video/*.webm
