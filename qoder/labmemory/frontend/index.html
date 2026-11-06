@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LabMemory · 研忆</title>
+  <meta name="description" content="把课题组的决策、证据和记忆留下来：seekdb 混合检索 + PowerContext 记忆。">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">研</div>
+        <div>
+          <div class="brand-name">LabMemory</div>
+          <div class="brand-sub">研忆 · 课题组记忆</div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="主导航">
+        <a href="#/dashboard" data-route="dashboard"><span class="nav-ico">◈</span><span>工作台</span></a>
+        <a href="#/ask" data-route="ask"><span class="nav-ico">⌕</span><span>提问</span></a>
+        <a href="#/library" data-route="library"><span class="nav-ico">▤</span><span>资料库</span></a>
+        <a href="#/memory" data-route="memory"><span class="nav-ico">◉</span><span>记忆</span></a>
+        <a href="#/conflicts" data-route="conflicts"><span class="nav-ico">!</span><span>冲突</span><span class="nav-badge" id="conflict-badge"></span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="tech-line"><span class="dot"></span> seekdb 1.4.0 · 混合检索</div>
+        <div class="tech-line"><span class="dot"></span> PowerContext 1.5.0 · 记忆</div>
+        <p>本地离线 · 回答只引用原文</p>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs" id="crumb">工作台</div>
+        <div class="status" id="status"><span class="status-dot"></span><span>连接中…</span></div>
+      </header>
+      <section id="view" class="view" aria-live="polite"></section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

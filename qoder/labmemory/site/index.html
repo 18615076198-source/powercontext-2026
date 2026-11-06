@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LabMemory · 研忆 — 课题组的可追溯记忆</title>
+  <meta name="description" content="把论文、实验笔记和组会决策放进同一个可检索、可追溯的记忆。seekdb 混合检索 + PowerContext 记忆，用 Qoder 开发。">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark">研</span>
+      <span><strong>LabMemory</strong><small>研忆 · 课题组记忆</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#problem">问题</a>
+      <a href="#how">怎么用</a>
+      <a href="#demo">演示</a>
+      <a href="#tech">技术</a>
+      <a href="#start">运行</a>
+      <a class="nav-cta" href="#repo">代码仓库</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">OCEANBASE QODER TRACK · 2026</div>
+        <h1>把组会的「为什么」，<br>留在下一次组会之前。</h1>
+        <p class="lede">LabMemory 把论文、实验笔记和组会决策放进同一个可检索、可追溯的记忆。问一句「上次为什么放弃这个方法」，它给你原文出处和当时的决定。</p>
+        <div class="hero-actions">
+          <a class="btn" href="#demo">看 3 分钟演示</a>
+          <a class="btn ghost" href="#start">本地跑起来</a>
+        </div>
+        <div class="hero-badges">
+          <span class="badge"><i></i> seekdb 混合检索</span>
+          <span class="badge"><i></i> PowerContext 记忆</span>
+          <span class="badge"><i></i> Qoder 开发</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="browser">
+          <div class="browser-bar"><span></span><span></span><span></span><em>127.0.0.1:8000</em></div>
+          <img src="assets/dashboard.png" alt="LabMemory 工作台截图">
+        </div>
+        <div class="float-card">
+          <div class="float-kicker">POWERCONTEXT · DECISION</div>
+          <p>暂不采用 Self-RAG 的全量自反思，端到端延迟约 2.3x。</p>
+          <code>art_d39685f5… @ r1</code>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div><strong>9</strong><span>篇真实 arXiv 论文</span></div>
+      <div><strong>874</strong><span>个可检索证据片段</span></div>
+      <div><strong>8</strong><span>条 PowerContext 决策记忆</span></div>
+      <div><strong>178<em>ms</em></strong><span>本地混合检索 + 记忆召回</span></div>
+    </section>
+
+    <section id="problem" class="section split">
+      <div class="section-copy">
+        <div class="eyebrow">THE REAL PAIN</div>
+        <h2>科研组会最贵的，<br>不是读论文。</h2>
+        <p>是重新找回上下文：这篇论文当时为什么被否？chunk size 最后为什么定 512？导师上个月说的约束是什么？这些答案通常散在 PDF、聊天记录和某个人的脑子里。</p>
+      </div>
+      <div class="pain-grid">
+        <article><span>01</span><h3>找不到</h3><p>几十篇 PDF，只记得「有一篇讲过」，却翻不到那一页。</p></article>
+        <article><span>02</span><h3>记不住</h3><p>决策的理由没有落盘，下次开会重新吵一遍。</p></article>
+        <article><span>03</span><h3>对不上</h3><p>新论文与旧决策相关，却没人提醒需要复核。</p></article>
+      </div>
+    </section>
+
+    <section id="how" class="section">
+      <div class="section-head">
+        <div><div class="eyebrow">HOW IT WORKS</div><h2>三个动作，<br>把「证据」和「决定」接起来。</h2></div>
+        <p class="section-note">不是又一个论文问答。LabMemory 同时检索原文，并召回课题组已经做过的决定。</p>
+      </div>
+      <div class="steps">
+        <article><div class="step-num">1</div><h3>导入</h3><p>9 篇真实论文 + 8 条组会/实验笔记。PDF 按页切 chunk，每篇生成中文摘要；笔记保留日期、类型和标签。</p><code>ingest.py --reset</code></article>
+        <article><div class="step-num">2</div><h3>提问</h3><p>seekdb 同时跑 BM25 全文与向量检索，RRF 融合；结果带论文/笔记、章节、页码和分数，点得回原文。</p><code>MATCH … + l2_distance …</code></article>
+        <article><div class="step-num">3</div><h3>记住</h3><p>PowerContext 保存决策、约束、进度、待办。回答里显示 artifact_id @ revision；新论文与旧决策冲突时提示复核。</p><code>art_… @ r1</code></article>
+      </div>
+    </section>
+
+    <section id="demo" class="section demo-section">
+      <div class="section-head">
+        <div><div class="eyebrow">DEMO</div><h2>问一句「为什么」，<br>拿到记忆 + 原文。</h2></div>
+        <p class="section-note">下面是真实运行截图。演示问题：我们为什么放弃 Self-RAG 的全量自反思？</p>
+      </div>
+      <div class="demo-main">
+        <img src="assets/ask.png" alt="提问与引用截图">
+      </div>
+      <div class="demo-thumbs">
+        <figure><img src="assets/library.png" alt="资料库截图"><figcaption><strong>资料库</strong>9 篇论文 + 8 条笔记，段落级 chunk</figcaption></figure>
+        <figure><img src="assets/memory.png" alt="记忆页截图"><figcaption><strong>记忆</strong>决策/约束/进度，artifact_id 可核对</figcaption></figure>
+        <figure><img src="assets/conflicts.png" alt="冲突页截图"><figcaption><strong>冲突</strong>新论文与旧决策相关时提示复核</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="tech" class="section tech-section">
+      <div class="section-head">
+        <div><div class="eyebrow">UNDER THE HOOD</div><h2>两个技术，<br>各管一件事。</h2></div>
+        <p class="section-note">同时使用 seekdb 与 PowerContext，分工写清楚：一个负责「证据」，一个负责「决定」。</p>
+      </div>
+      <div class="tech-grid">
+        <article class="tech-card seekdb">
+          <div class="tech-top"><span class="tech-logo">s</span><div><h3>seekdb</h3><p>知识证据层</p></div></div>
+          <ul>
+            <li>9 篇论文 + 8 条笔记，874 个 chunk 入库</li>
+            <li><code>VECTOR(384)</code> + <code>FULLTEXT INDEX</code> + 标量过滤</li>
+            <li>BM25 与向量两路召回，RRF(k=60) 融合</li>
+            <li>每条结果带 source / section / page / bm25 / dist / rrf</li>
+          </ul>
+          <div class="code-block"><span class="code-label">seekdb SQL</span><pre>SELECT id, source_title,
+       MATCH(search_text, keywords) AGAINST (%s) AS bm25,
+       l2_distance(embedding, %s) AS dist
+FROM chunks
+ORDER BY dist ASC
+LIMIT 30;</pre></div>
+        </article>
+        <article class="tech-card pc">
+          <div class="tech-top"><span class="tech-logo">p</span><div><h3>PowerContext</h3><p>决策记忆层</p></div></div>
+          <ul>
+            <li>1.5.0 本地 Server，Basic memory（无需外部 LLM）</li>
+            <li>8 条显式记忆：决策 / 约束 / 进度 / 待办</li>
+            <li>提问时按 query 召回，回答显示 artifact_id @ revision</li>
+            <li>同一 scope 跨会话复用；可审计、可复核</li>
+          </ul>
+          <div class="code-block"><span class="code-label">PowerContext HTTP</span><pre>POST /v1/memory/remember
+{ "scope_id": "scp_…",
+  "kind": "decision",
+  "text": "暂不采用 Self-RAG 的全量自反思…" }
+
+POST /v1/memory/search
+{ "scope_id": "scp_…",
+  "query": "为什么放弃 Self-RAG？" }</pre></div>
+        </article>
+      </div>
+      <div class="flow">
+        <div>论文 PDF / 笔记</div><span>→</span><div>seekdb 混合检索</div><span>+</span><div>PowerContext 记忆召回</div><span>→</span><div>带出处的回答</div>
+      </div>
+    </section>
+
+    <section id="qoder" class="section qoder-section">
+      <div class="section-head">
+        <div><div class="eyebrow">QODER DEVELOPMENT</div><h2>用 Qoder 开发，<br>用 Qoder Sites 发布。</h2></div>
+        <p class="section-note">开发记录会包含 Qoder 会话截图、prompt、改动文件和 commit；Qoder 账号 UID 在提交材料中提供。</p>
+      </div>
+      <div class="qoder-grid">
+        <article><span>01</span><h3>需求拆解</h3><p>把「组会记忆」拆成导入、混合检索、记忆、冲突四条链路，写成可执行的 SPEC。</p></article>
+        <article><span>02</span><h3>编码 / 调试</h3><p>Qoder 参与后端接口、前端迭代、测试与修复；每次 session 留 prompt 和运行结果。</p></article>
+        <article><span>03</span><h3>发布</h3><p>通过 Qoder Sites 发布本页，可见范围设为「任何人都可访问」。</p></article>
+      </div>
+      <div class="qoder-proof">
+        <div><strong>Qoder CLI</strong><code>qodercli --version → 1.1.84</code></div>
+        <div><strong>开发记录</strong><code>docs/qoder-log.md</code></div>
+        <div><strong>站点</strong><code id="site-url">发布后填入 Qoder Sites URL</code></div>
+      </div>
+    </section>
+
+    <section id="start" class="section start-section">
+      <div class="section-copy">
+        <div class="eyebrow">QUICK START</div>
+        <h2>从零跑起来，<br>大约 5 分钟。</h2>
+        <p>需要 WSL2 Ubuntu、Python 3.12、seekdb 1.4、PowerContext 1.5。完整步骤见仓库 README。</p>
+        <div class="start-actions">
+          <a class="btn" href="#repo">打开代码仓库</a>
+          <a class="btn ghost" href="#data">查看数据来源</a>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar"><span></span><span></span><span></span><em>bash · labmemory</em></div>
+        <pre><span class="c"># 1. seekdb（若未运行）</span>
+seekdb --base-dir ~/labmemory-seekdb --port 2881 --nodaemon
+
+<span class="c"># 2. PowerContext 1.5（Basic memory，无需模型 Key）</span>
+powercontext server run --env-file ~/powercontext-manual/manual.env
+
+<span class="c"># 3. 导入 9 篇论文 + 8 条笔记 + 8 条记忆</span>
+python -m backend.seed.ingest --reset
+
+<span class="c"># 4. 启动应用</span>
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000</pre>
+      </div>
+    </section>
+
+    <section id="data" class="section data-section">
+      <div class="section-head">
+        <div><div class="eyebrow">DATA & PROVENANCE</div><h2>真实论文，<br>可核对的引用。</h2></div>
+        <p class="section-note">9 篇论文均来自 arXiv，标题与链接可逐条核对。组会/实验笔记是演示场景数据，实验数值已标注为演示数据。</p>
+      </div>
+      <div class="paper-list">
+        <a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noreferrer"><span>2005.11401</span>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a>
+        <a href="https://arxiv.org/abs/2004.04906" target="_blank" rel="noreferrer"><span>2004.04906</span>Dense Passage Retrieval for Open-Domain Question Answering</a>
+        <a href="https://arxiv.org/abs/2002.08909" target="_blank" rel="noreferrer"><span>2002.08909</span>REALM: Retrieval-Augmented Language Model Pre-Training</a>
+        <a href="https://arxiv.org/abs/2007.01282" target="_blank" rel="noreferrer"><span>2007.01282</span>Leveraging Passage Retrieval with Generative Models for Open Domain QA</a>
+        <a href="https://arxiv.org/abs/2310.11511" target="_blank" rel="noreferrer"><span>2310.11511</span>Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection</a>
+        <a href="https://arxiv.org/abs/2401.15884" target="_blank" rel="noreferrer"><span>2401.15884</span>Corrective Retrieval Augmented Generation</a>
+        <a href="https://arxiv.org/abs/2307.03172" target="_blank" rel="noreferrer"><span>2307.03172</span>Lost in the Middle: How Language Models Use Long Contexts</a>
+        <a href="https://arxiv.org/abs/2308.14508" target="_blank" rel="noreferrer"><span>2308.14508</span>LongBench: A Bilingual, Multitask Benchmark for Long Context Understanding</a>
+        <a href="https://arxiv.org/abs/2403.14403" target="_blank" rel="noreferrer"><span>2403.14403</span>Adaptive-RAG: Learning to Adapt Retrieval-Augmented LLMs through Question Complexity</a>
+      </div>
+    </section>
+
+    <section class="cta" id="repo">
+      <div>
+        <div class="eyebrow">SUBMISSION</div>
+        <h2>组会的结论，<br>应该留在系统里。</h2>
+        <p>代码、运行说明、验证样例和 Qoder 开发记录都在仓库中。评审可按 README 在本机复现。</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn" href="https://github.com/18615076198-source/powercontext-2026" target="_blank" rel="noreferrer">代码仓库</a>
+        <a class="btn ghost" href="https://github.com/18615076198-source/powercontext-2026/tree/2026-competition-ecosystem/qoder/labmemory" target="_blank" rel="noreferrer">项目目录</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div><span class="brand-mark small">研</span> LabMemory · 研忆</div>
+    <div>seekdb 1.4.0 · PowerContext 1.5.0 · Qoder CLI 1.1.84</div>
+    <div>Built with Qoder · OceanBase 大赛 Qoder 赛题</div>
+  </footer>
+</body>
+</html>
