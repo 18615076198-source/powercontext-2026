@@ -1,0 +1,215 @@
+[
+  {
+    "id": "2005.11401",
+    "arxiv_id": "2005.11401",
+    "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+    "published": "2020-05-22",
+    "authors": [
+      "Patrick Lewis",
+      "Ethan Perez",
+      "Aleksandra Piktus",
+      "Fabio Petroni",
+      "Vladimir Karpukhin",
+      "Naman Goyal",
+      "Heinrich Küttler",
+      "Mike Lewis",
+      "Wen-tau Yih",
+      "Tim Rocktäschel",
+      "Sebastian Riedel",
+      "Douwe Kiela"
+    ],
+    "abstract": "Large pre-trained language models have been shown to store factual knowledge in their parameters, and achieve state-of-the-art results when fine-tuned on downstream NLP tasks. However, their ability to access and precisely manipulate knowledge is still limited, and hence on knowledge-intensive tasks, their performance lags behind task-specific architectures. Additionally, providing provenance for their decisions and updating their world knowledge remain open research problems. Pre-trained models with a differentiable access mechanism to explicit non-parametric memory can overcome this issue, but have so far been only investigated for extractive downstream tasks. We explore a general-purpose fine-tuning recipe for retrieval-augmented generation (RAG) -- models which combine pre-trained parametric and non-parametric memory for language generation. We introduce RAG models where the parametric memory is a pre-trained seq2seq model and the non-parametric memory is a dense vector index of Wikipedia, accessed with a pre-trained neural retriever. We compare two RAG formulations, one which conditions on the same retrieved passages across the whole generated sequence, the other can use different passages per token. We fine-tune and evaluate our models on a wide range of knowledge-intensive NLP tasks and set the state-of-the-art on three open domain QA tasks, outperforming parametric seq2seq models and task-specific retrieve-and-extract architectures. For language generation tasks, we find that RAG models generate more specific, diverse and factual language than a state-of-the-art parametric-only seq2seq baseline.",
+    "summary_zh": "把参数化记忆（seq2seq）与非参数化记忆（DPR 检索维基百科）结合，生成更具体、多样且事实性更强的回答；检索文档同时作为可追溯证据。",
+    "keywords_zh": "检索增强 生成 稠密检索 维基百科 事实性 RAG",
+    "tags": [
+      "RAG",
+      "retrieval",
+      "generation"
+    ],
+    "pdf": "data/papers/2005.11401.pdf"
+  },
+  {
+    "id": "2004.04906",
+    "arxiv_id": "2004.04906",
+    "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+    "published": "2020-04-10",
+    "authors": [
+      "Vladimir Karpukhin",
+      "Barlas Oğuz",
+      "Sewon Min",
+      "Patrick Lewis",
+      "Ledell Wu",
+      "Sergey Edunov",
+      "Danqi Chen",
+      "Wen-tau Yih"
+    ],
+    "abstract": "Open-domain question answering relies on efficient passage retrieval to select candidate contexts, where traditional sparse vector space models, such as TF-IDF or BM25, are the de facto method. In this work, we show that retrieval can be practically implemented using dense representations alone, where embeddings are learned from a small number of questions and passages by a simple dual-encoder framework. When evaluated on a wide range of open-domain QA datasets, our dense retriever outperforms a strong Lucene-BM25 system largely by 9%-19% absolute in terms of top-20 passage retrieval accuracy, and helps our end-to-end QA system establish new state-of-the-art on multiple open-domain QA benchmarks.",
+    "summary_zh": "用双塔编码器做稠密段落检索，在开放域 QA 上显著优于 BM25；fine-tune 后的 DPR Top-20 准确率约 78%，说明检索器微调收益明显。",
+    "keywords_zh": "稠密检索 双塔 BM25 开放域问答 微调 DPR",
+    "tags": [
+      "DPR",
+      "dense-retrieval",
+      "QA"
+    ],
+    "pdf": "data/papers/2004.04906.pdf"
+  },
+  {
+    "id": "2002.08909",
+    "arxiv_id": "2002.08909",
+    "title": "REALM: Retrieval-Augmented Language Model Pre-Training",
+    "published": "2020-02-10",
+    "authors": [
+      "Kelvin Guu",
+      "Kenton Lee",
+      "Zora Tung",
+      "Panupong Pasupat",
+      "Ming-Wei Chang"
+    ],
+    "abstract": "Language model pre-training has been shown to capture a surprising amount of world knowledge, crucial for NLP tasks such as question answering. However, this knowledge is stored implicitly in the parameters of a neural network, requiring ever-larger networks to cover more facts. To capture knowledge in a more modular and interpretable way, we augment language model pre-training with a latent knowledge retriever, which allows the model to retrieve and attend over documents from a large corpus such as Wikipedia, used during pre-training, fine-tuning and inference. For the first time, we show how to pre-train such a knowledge retriever in an unsupervised manner, using masked language modeling as the learning signal and backpropagating through a retrieval step that considers millions of documents. We demonstrate the effectiveness of Retrieval-Augmented Language Model pre-training (REALM) by fine-tuning on the challenging task of Open-domain Question Answering (Open-QA). We compare against state-of-the-art models for both explicit and implicit knowledge storage on three popular Open-QA benchmarks, and find that we outperform all previous methods by a significant margin (4-16% absolute accuracy), while also providing qualitative benefits such as interpretability and modularity.",
+    "summary_zh": "在预训练阶段联合训练知识检索器与语言模型，用掩码语言建模信号端到端学习检索，无需额外的检索监督。",
+    "keywords_zh": "检索预训练 端到端 掩码语言模型 REALM",
+    "tags": [
+      "REALM",
+      "pretraining",
+      "retrieval"
+    ],
+    "pdf": "data/papers/2002.08909.pdf"
+  },
+  {
+    "id": "2007.01282",
+    "arxiv_id": "2007.01282",
+    "title": "Leveraging Passage Retrieval with Generative Models for Open Domain Question Answering",
+    "published": "2020-07-02",
+    "authors": [
+      "Gautier Izacard",
+      "Edouard Grave"
+    ],
+    "abstract": "Generative models for open domain question answering have proven to be competitive, without resorting to external knowledge. While promising, this approach requires to use models with billions of parameters, which are expensive to train and query. In this paper, we investigate how much these models can benefit from retrieving text passages, potentially containing evidence. We obtain state-of-the-art results on the Natural Questions and TriviaQA open benchmarks. Interestingly, we observe that the performance of this method significantly improves when increasing the number of retrieved passages. This is evidence that generative models are good at aggregating and combining evidence from multiple passages.",
+    "summary_zh": "FiD 将多个检索段落分别编码后在解码器融合，证明增加段落数量能提升开放域 QA，且比单纯增大模型参数更省。",
+    "keywords_zh": "融合解码 多段落 开放域问答 FiD",
+    "tags": [
+      "FiD",
+      "fusion",
+      "QA"
+    ],
+    "pdf": "data/papers/2007.01282.pdf"
+  },
+  {
+    "id": "2310.11511",
+    "arxiv_id": "2310.11511",
+    "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+    "published": "2023-10-17",
+    "authors": [
+      "Akari Asai",
+      "Zeqiu Wu",
+      "Yizhong Wang",
+      "Avirup Sil",
+      "Hannaneh Hajishirzi"
+    ],
+    "abstract": "Despite their remarkable capabilities, large language models (LLMs) often produce responses containing factual inaccuracies due to their sole reliance on the parametric knowledge they encapsulate. Retrieval-Augmented Generation (RAG), an ad hoc approach that augments LMs with retrieval of relevant knowledge, decreases such issues. However, indiscriminately retrieving and incorporating a fixed number of retrieved passages, regardless of whether retrieval is necessary, or passages are relevant, diminishes LM versatility or can lead to unhelpful response generation. We introduce a new framework called Self-Reflective Retrieval-Augmented Generation (Self-RAG) that enhances an LM's quality and factuality through retrieval and self-reflection. Our framework trains a single arbitrary LM that adaptively retrieves passages on-demand, and generates and reflects on retrieved passages and its own generations using special tokens, called reflection tokens. Generating reflection tokens makes the LM controllable during the inference phase, enabling it to tailor its behavior to diverse task requirements. Experiments show that Self-RAG (7B and 13B parameters) significantly outperforms state-of-the-art LLMs and retrieval-augmented models on a diverse set of tasks. Specifically, Self-RAG outperforms ChatGPT and retrieval-augmented Llama2-chat on Open-domain QA, reasoning and fact verification tasks, and it shows significant gains in improving factuality and citation accuracy for long-form generations relative to these models.",
+    "summary_zh": "Self-RAG 让模型生成反思 token，按需检索并对证据相关性/支撑性自我批判，提升事实性，但引入额外推理开销。",
+    "keywords_zh": "自反思 反思token 按需检索 延迟 事实性 Self-RAG",
+    "tags": [
+      "Self-RAG",
+      "reflection",
+      "latency"
+    ],
+    "pdf": "data/papers/2310.11511.pdf"
+  },
+  {
+    "id": "2401.15884",
+    "arxiv_id": "2401.15884",
+    "title": "Corrective Retrieval Augmented Generation",
+    "published": "2024-01-29",
+    "authors": [
+      "Shi-Qi Yan",
+      "Jia-Chen Gu",
+      "Yun Zhu",
+      "Zhen-Hua Ling"
+    ],
+    "abstract": "Large language models (LLMs) inevitably exhibit hallucinations since the accuracy of generated texts cannot be secured solely by the parametric knowledge they encapsulate. Although retrieval-augmented generation (RAG) is a practicable complement to LLMs, it relies heavily on the relevance of retrieved documents, raising concerns about how the model behaves if retrieval goes wrong. To this end, we propose the Corrective Retrieval Augmented Generation (CRAG) to improve the robustness of generation. Specifically, a lightweight retrieval evaluator is designed to assess the overall quality of retrieved documents for a query, returning a confidence degree based on which different knowledge retrieval actions can be triggered. Since retrieval from static and limited corpora can only return sub-optimal documents, large-scale web searches are utilized as an extension for augmenting the retrieval results. Besides, a decompose-then-recompose algorithm is designed for retrieved documents to selectively focus on key information and filter out irrelevant information in them. CRAG is plug-and-play and can be seamlessly coupled with various RAG-based approaches. Experiments on four datasets covering short- and long-form generation tasks show that CRAG can significantly improve the performance of RAG-based approaches.",
+    "summary_zh": "CRAG 增加轻量检索评估器，把检索结果判为正确/错误/模糊，并触发纠错或网络搜索补充，提升 RAG 鲁棒性。",
+    "keywords_zh": "纠错 检索评估 网络搜索 鲁棒性 CRAG",
+    "tags": [
+      "CRAG",
+      "corrective",
+      "robustness"
+    ],
+    "pdf": "data/papers/2401.15884.pdf"
+  },
+  {
+    "id": "2307.03172",
+    "arxiv_id": "2307.03172",
+    "title": "Lost in the Middle: How Language Models Use Long Contexts",
+    "published": "2023-07-06",
+    "authors": [
+      "Nelson F. Liu",
+      "Kevin Lin",
+      "John Hewitt",
+      "Ashwin Paranjape",
+      "Michele Bevilacqua",
+      "Fabio Petroni",
+      "Percy Liang"
+    ],
+    "abstract": "While recent language models have the ability to take long contexts as input, relatively little is known about how well they use longer context. We analyze the performance of language models on two tasks that require identifying relevant information in their input contexts: multi-document question answering and key-value retrieval. We find that performance can degrade significantly when changing the position of relevant information, indicating that current language models do not robustly make use of information in long input contexts. In particular, we observe that performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle of long contexts, even for explicitly long-context models. Our analysis provides a better understanding of how language models use their input context and provides new evaluation protocols for future long-context language models.",
+    "summary_zh": "系统分析长上下文模型：相关信息位于输入中间时性能明显下降，呈 U 形曲线；长上下文窗口不等于有效利用。",
+    "keywords_zh": "长上下文 中间丢失 U型曲线 位置偏差",
+    "tags": [
+      "long-context",
+      "position-bias"
+    ],
+    "pdf": "data/papers/2307.03172.pdf"
+  },
+  {
+    "id": "2308.14508",
+    "arxiv_id": "2308.14508",
+    "title": "LongBench: A Bilingual, Multitask Benchmark for Long Context Understanding",
+    "published": "2023-08-28",
+    "authors": [
+      "Yushi Bai",
+      "Xin Lv",
+      "Jiajie Zhang",
+      "Hongchang Lyu",
+      "Jiankai Tang",
+      "Zhidian Huang",
+      "Zhengxiao Du",
+      "Xiao Liu",
+      "Aohan Zeng",
+      "Lei Hou",
+      "Yuxiao Dong",
+      "Jie Tang",
+      "Juanzi Li"
+    ],
+    "abstract": "Although large language models (LLMs) demonstrate impressive performance for many language tasks, most of them can only handle texts a few thousand tokens long, limiting their applications on longer sequence inputs, such as books, reports, and codebases. Recent works have proposed methods to improve LLMs' long context capabilities by extending context windows and more sophisticated memory mechanisms. However, comprehensive benchmarks tailored for evaluating long context understanding are lacking. In this paper, we introduce LongBench, the first bilingual, multi-task benchmark for long context understanding, enabling a more rigorous evaluation of long context understanding. LongBench comprises 21 datasets across 6 task categories in both English and Chinese, with an average length of 6,711 words (English) and 13,386 characters (Chinese). These tasks cover key long-text application areas including single-doc QA, multi-doc QA, summarization, few-shot learning, synthetic tasks, and code completion. All datasets in LongBench are standardized into a unified format, allowing for effortless automatic evaluation of LLMs. Upon comprehensive evaluation of 8 LLMs on LongBench, we find that: (1) Commercial model (GPT-3.5-Turbo-16k) outperforms other open-sourced models, but still struggles on longer contexts. (2) Scaled position embedding and fine-tuning on longer sequences lead to substantial improvement on long context understanding. (3) Context compression technique such as retrieval brings improvement for model with weak ability on long contexts, but the performance still lags behind models that have strong long context understanding capability. The code and datasets are available at https://github.com/THUDM/LongBench.",
+    "summary_zh": "LongBench 是双语多任务长上下文基准，覆盖 6 类任务；即使长上下文模型，长输入仍带来显著性能损失。",
+    "keywords_zh": "长上下文 基准 双语 多任务 评测 LongBench",
+    "tags": [
+      "LongBench",
+      "benchmark",
+      "long-context"
+    ],
+    "pdf": "data/papers/2308.14508.pdf"
+  },
+  {
+    "id": "2403.14403",
+    "arxiv_id": "2403.14403",
+    "title": "Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity",
+    "published": "2024-03-21",
+    "authors": [
+      "Soyeong Jeong",
+      "Jinheon Baek",
+      "Sukmin Cho",
+      "Sung Ju Hwang",
+      "Jong C. Park"
+    ],
+    "abstract": "Retrieval-Augmented Large Language Models (LLMs), which incorporate the non-parametric knowledge from external knowledge bases into LLMs, have emerged as a promising approach to enhancing response accuracy in several tasks, such as Question-Answering (QA). However, even though there are various approaches dealing with queries of different complexities, they either handle simple queries with unnecessary computational overhead or fail to adequately address complex multi-step queries; yet, not all user requests fall into only one of the simple or complex categories. In this work, we propose a novel adaptive QA framework, that can dynamically select the most suitable strategy for (retrieval-augmented) LLMs from the simplest to the most sophisticated ones based on the query complexity. Also, this selection process is operationalized with a classifier, which is a smaller LM trained to predict the complexity level of incoming queries with automatically collected labels, obtained from actual predicted outcomes of models and inherent inductive biases in datasets. This approach offers a balanced strategy, seamlessly adapting between the iterative and single-step retrieval-augmented LLMs, as well as the no-retrieval methods, in response to a range of query complexities. We validate our model on a set of open-domain QA datasets, covering multiple query complexities, and show that ours enhances the overall efficiency and accuracy of QA systems, compared to relevant baselines including the adaptive retrieval approaches. Code is available at: https://github.com/starsuzi/Adaptive-RAG.",
+    "summary_zh": "Adaptive-RAG 用小型分类器判断问题复杂度，自适应选择不检索/单步/多步检索，在效率与效果之间折中。",
+    "keywords_zh": "自适应检索 问题复杂度 分类器 效率 Adaptive-RAG",
+    "tags": [
+      "Adaptive-RAG",
+      "adaptive",
+      "efficiency"
+    ],
+    "pdf": "data/papers/2403.14403.pdf"
+  }
+]

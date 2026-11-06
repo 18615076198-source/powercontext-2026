@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+data/cache/
+data/papers/*.tmp
+frontend/.vite/
+node_modules/
