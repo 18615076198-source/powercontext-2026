@@ -243,7 +243,7 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 
 - 账号 UID：<待登录后填写>
 - 记录文件：<code>docs/qoder-log.md</code>
-- 说明：项目脚手架、论文下载、演示笔记和规格文档由人工准备；核心代码/前端/测试由 Qoder 完成或 Qoder 参与完成，逐条留痕；不伪造会话。
+- 说明：项目脚手架、论文下载、演示笔记和规格文档由准备阶段完成；Qoder 参与情况见 <code>docs/qoder-log.md</code>，如实记录准备阶段与 Qoder 会话，不伪造。
 
 ## 提交材料
 
