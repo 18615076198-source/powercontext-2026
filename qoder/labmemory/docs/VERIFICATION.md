@@ -141,6 +141,19 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 - 每条有 <code>artifact.family=atomic-memory</code>、<code>artifact_id</code>、<code>revision</code>、<code>state</code>。
 - 页面截图：<code>docs/screenshots/memory.png</code>。
 
+## 样例 6：最近提问历史（Qoder 实现）
+
+~~~bash
+curl -s 'http://127.0.0.1:8000/api/history?limit=5' | python3 -m json.tool
+pytest -q tests/test_api.py::test_history
+~~~
+
+**预期结果**
+
+- <code>items</code> 返回最新 5 条 question / latency_ms / created_at。
+- Dashboard 的「最近提问」显示这些记录；点击任意一条回到提问页并自动提交。
+- <code>test_history</code> 1 passed；截图：<code>docs/screenshots/history.png</code>。
+
 ## 验收自检
 
 - [x] 9 篇论文 PDF 存在，标题/链接可在 site 的「数据来源」核对。
@@ -149,5 +162,6 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 - [x] 检索 trace 同时有 bm25_count、vector_count、rrf_k。
 - [x] PowerContext 记忆可在 Dashboard 和 API 核对 artifact_id @ revision。
 - [x] 冲突列表 3 条，可生成复核任务/忽略。
+- [x] <code>/api/history</code> 返回最近提问；Dashboard 可点击重问；test_history passed。
 - [x] 前端 5 页无控制台错误；截图见 <code>docs/screenshots/</code>。
 - [x] README 启动步骤可复现；未提交真实密钥。

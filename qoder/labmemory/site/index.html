@@ -150,18 +150,22 @@ POST /v1/memory/search
     <section id="qoder" class="section qoder-section">
       <div class="section-head">
         <div><div class="eyebrow">QODER DEVELOPMENT</div><h2>用 Qoder 开发，<br>用 Qoder Sites 发布。</h2></div>
-        <p class="section-note">开发记录会包含 Qoder 会话截图、prompt、改动文件和 commit；Qoder 账号 UID 在提交材料中提供。</p>
+        <p class="section-note">Qoder 完成了 Qoder Sites 创建/发布/公开、后端 <code>/api/history</code>、前端「最近提问」区块与 pytest 7/7；记录见 <code>docs/qoder-log.md</code>。</p>
       </div>
       <div class="qoder-grid">
         <article><span>01</span><h3>需求拆解</h3><p>把「组会记忆」拆成导入、混合检索、记忆、冲突四条链路，写成可执行的 SPEC。</p></article>
-        <article><span>02</span><h3>编码 / 调试</h3><p>Qoder 会话将覆盖后端接口、前端迭代、测试与修复；每次 session 留 prompt 和运行结果。</p></article>
-        <article><span>03</span><h3>发布</h3><p>通过 Qoder Sites 发布本页，可见范围设为「任何人都可访问」。</p></article>
+        <article><span>02</span><h3>编码 / 调试</h3><p>Qoder 已实现 <code>/api/history</code>、Dashboard「最近提问」、点击回填提问，并新增 <code>test_history</code>；<strong>7 passed</strong>。</p></article>
+        <article><span>03</span><h3>发布</h3><p>通过 Qoder Sites 创建、发布并设为「任何人可访问」；匿名 200，含 Made with Qoder 水印。</p></article>
       </div>
       <div class="qoder-proof">
         <div><strong>Qoder CLI</strong><code>qodercli --version → 1.1.84</code></div>
         <div><strong>开发记录</strong><code>docs/qoder-log.md</code></div>
         <div><strong>站点</strong><code id="site-url"><a href="https://labmemory-lasfpz26o0f.qoder.website" target="_blank" rel="noreferrer">labmemory-lasfpz26o0f.qoder.website</a></code></div>
       </div>
+      <figure class="qoder-shot">
+        <img src="assets/history.png" alt="Qoder 实现的最近提问">
+        <figcaption><strong>Qoder 实现的「最近提问」</strong>来自 seekdb 的 <code>queries</code> 表；点击任意一条可回到提问页重新提问。</figcaption>
+      </figure>
     </section>
 
     <section id="start" class="section start-section">

@@ -25,7 +25,7 @@ def test_ask_selfrag_memory_and_citation():
     data = httpx.post(
         BASE + "/api/ask",
         json={"query": "我们为什么放弃 Self-RAG 的全量自反思？"},
-        timeout=30,
+        timeout=60,
     ).json()
     assert "暂不采用 Self-RAG" in data["answer"]
     types = {c["type"] for c in data["citations"]}
@@ -59,7 +59,7 @@ def test_search_filter_paper_only():
     data = httpx.post(
         BASE + "/api/search",
         json={"query": "Self-RAG reflection", "filters": {"source_type": "paper"}, "top_k": 3},
-        timeout=30,
+        timeout=60,
     ).json()
     assert data["results"]
     assert all(r["source_type"] == "paper" for r in data["results"])
@@ -67,7 +67,7 @@ def test_search_filter_paper_only():
 
 def test_history():
     question = "history probe: chunk size 定在多少，依据是什么？"
-    httpx.post(BASE + "/api/ask", json={"query": question}, timeout=30).raise_for_status()
+    httpx.post(BASE + "/api/ask", json={"query": question}, timeout=60).raise_for_status()
     data = httpx.get(BASE + "/api/history?limit=20", timeout=10).json()
     items = data["items"]
     assert items

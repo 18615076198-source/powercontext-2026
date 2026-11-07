@@ -99,7 +99,19 @@ Qoder 实际改动：
 - 说明：未创建新站点、未修改站点文件；Qoder 仅更新草稿并发布。
 - 日志：<code>docs/qoder-sites-republish.log</code>
 
-## 5. 证明清单
+## 5. Qoder Session 4 — 更新「最近提问」展示并再次发布（已完成）
+
+- 时间：2026-11-07 20:43 - 20:46（Asia/Shanghai）
+- 模型：Qwen3.8-Max；会话 ID：<code>f6661184-6169-4105-b1b1-cc558996865a</code>
+- 目标：把准确的 Qoder 开发说明、Qoder 实现的「最近提问」截图写进站点，对同一 project 重新发布，保持 public。
+- actionId：<code>b8c168d9-b5a4-4120-bb45-23e5ccaa5845</code>
+- 上传大小：4,216,108 bytes；首次 prepare 报 <code>sites_upload_unavailable</code>，用同一 actionId 重试成功。
+- 发布结果：<code>published: true</code>，operation succeeded / committed，readiness publication_completed；access mode <code>public</code>。
+- 匿名验证：<code>https://labmemory-lasfpz26o0f.qoder.website</code> 返回 200；新 <code>assets/history.png</code> 返回 200，39,352 bytes，与本地一致。
+- 说明：未创建新站点、未修改站点文件；Qoder 仅 prepare + publish。
+- 日志：<code>docs/qoder-sites-republish2.log</code>
+
+## 6. 证明清单
 
 - Qoder CLI 版本：1.1.84
 - Qoder 登录：已登录（PAT，账号类型 user）
@@ -107,5 +119,11 @@ Qoder 实际改动：
 - Qoder Sites URL：https://labmemory-lasfpz26o0f.qoder.website
 - 公网验证：匿名 200（截图 <code>docs/screenshots/qoder-site.png</code>）
 - Qoder 编码会话：已完成（Session 2，真实代码 + 测试）
-- Qoder Sites 重新发布：已完成（Session 3，public，匿名 200）
-- 对应 commit：<code>927f93d</code>（Session 2 代码）；本次 Qoder Sites 记录/文档待提交
+- Qoder Sites 更新发布：已完成（Session 3 + Session 4，public，匿名 200）
+- 对应 commit：<code>09e5142</code>（Session 2 代码 + 文档）；本轮预热/站点更新待提交，最终 hash 见 git log
+
+## 7. 其他工程优化（非 Qoder，如实记录）
+
+- FastAPI 启动时预热 embedding 模型，避免首次 <code>/api/ask</code> 冷启动超时；首次启动约多 2-5 秒。
+- API 测试 <code>/api/ask</code> 超时从 30s 调到 60s；重启服务后 <code>pytest -q</code> **7 passed**。
+- 这两项由操作者完成，不冒充 Qoder 产出。

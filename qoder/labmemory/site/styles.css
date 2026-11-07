@@ -144,6 +144,10 @@ main { overflow: hidden; }
 .qoder-proof div { background: var(--dark); color: #efe3d2; border-radius: 12px; padding: 14px 16px; }
 .qoder-proof strong { display: block; font-family: var(--serif); font-size: 13px; color: #f3d6c2; }
 .qoder-proof code { display: block; margin-top: 5px; font-size: 10.5px; color: #bfae97; word-break: break-all; }
+.qoder-shot { margin: 18px 0 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+.qoder-shot img { width: 100%; display: block; }
+.qoder-shot figcaption { padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.qoder-shot strong { color: var(--ink); font-family: var(--serif); font-size: 13px; margin-right: 4px; }
 
 .start-section { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 50px; align-items: center; }
 .start-actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }

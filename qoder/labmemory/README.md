@@ -42,6 +42,7 @@ LabMemory 把「证据」和「决定」接起来：seekdb 负责从论文/笔�
 - **证据型回答**：本地抽取式摘要，只引用检索到的原文；没有证据就明确说找不到；不调用外部 LLM。
 - **PowerContext 记忆**：8 条显式记忆（决策/约束/进度/待办）；提问时召回；回答和记忆页显示 <code>artifact_id @ revision</code>。
 - **冲突提醒**：规则版扫描；新论文的方法/关键词与既有决策重叠时提示「可能影响决策」，可生成复核任务。
+- **最近提问**：Qoder 实现 <code>/api/history</code>；Dashboard 展示最近 5 条问题，点击可回填并重新提问。
 - **五个页面**：工作台、提问、资料库、记忆、冲突；响应式，无外部 CDN。
 
 ## 架构
@@ -101,6 +102,7 @@ qoder/labmemory/
 
 - WSL2 Ubuntu（或 Linux），Python 3.12，<code>uv</code>，Docker（可选）
 - 至少 2GB 内存；首次运行需下载约 220MB embedding 模型
+- FastAPI 启动时会预热 embedding 模型（约多 2-5 秒），之后首次提问不再冷启动
 - 不需要任何外部 LLM / API Key
 
 ### 1. 启动 seekdb
@@ -242,7 +244,9 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 ## Qoder 开发记录
 
 - 账号 UID：01a1b466-1089-70fc-8d82-c343b049e38a
+- Qoder Sites：https://labmemory-lasfpz26o0f.qoder.website
 - 记录文件：<code>docs/qoder-log.md</code>
+- Qoder 实际完成：Qoder Sites 创建/发布/公开、<code>/api/history</code> + Dashboard「最近提问」、<code>test_history</code>、两次站点更新发布。
 - 说明：项目脚手架、论文下载、演示笔记和规格文档由准备阶段完成；Qoder 参与情况见 <code>docs/qoder-log.md</code>，如实记录准备阶段与 Qoder 会话，不伪造。
 
 ## 提交材料

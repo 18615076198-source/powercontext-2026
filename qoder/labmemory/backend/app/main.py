@@ -29,6 +29,13 @@ async def lifespan(app: FastAPI):
         memory.client.ensure_scope()
     except Exception as exc:  # noqa: BLE001
         log.warning("PowerContext not ready at startup: %s", exc)
+    try:
+        from .embeddings import embed_query
+
+        embed_query("warmup")
+        log.info("embedding model warmed")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("embedding warmup failed: %s", exc)
     yield
     memory.client.close()
 

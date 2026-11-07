@@ -21,7 +21,7 @@
 | 代码仓库 | 完成 | https://github.com/18615076198-source/powercontext-2026/tree/2026-competition-ecosystem/qoder/labmemory |
 | 运行说明 | 完成 | <code>README.md</code>（环境、依赖、seekdb/PowerContext、启动步骤） |
 | 验证样例 | 完成 | <code>docs/VERIFICATION.md</code> |
-| Qoder 开发记录 | 完成 | <code>docs/qoder-log.md</code>（Sites session + 编码 session + transcript/日志路径） |
+| Qoder 开发记录 | 完成 | <code>docs/qoder-log.md</code>（4 个 session：Sites 发布/公开、history 编码+测试、两次站点更新；含 transcript/日志路径） |
 | Qoder 账号 UID | 完成 | 01a1b466-1089-70fc-8d82-c343b049e38a |
 | 使用效果材料 | 可选/待办 | 访问统计、使用日志、问卷/反馈（匿名） |
 | 一页项目介绍 | 完成 | <code>docs/one-pager.md</code> |
@@ -33,7 +33,7 @@
 
 - 仓库：<code>18615076198-source/powercontext-2026</code>（public）
 - 分支：<code>2026-competition-ecosystem</code>
-- 提交：<code>927f93d</code>（本次 Qoder Sites 记录/文档待提交；最终 hash 见 git log）
+- 提交：<code>09e5142</code>（本轮预热/站点更新待提交；最终 hash 见 git log）
 - 项目目录：<code>qoder/labmemory</code>
 - 本地 worktree：<code>D:\deepseek\qoder-2026</code>（不影响其他赛道分支）
 
@@ -43,6 +43,8 @@
 - [x] 核心功能
 - [x] 演示视频（21 秒，<code>site/assets/demo.mp4</code>）
 - [x] 截图（工作台/提问/资料库/记忆/冲突）
+- [x] Qoder 实现的「最近提问」截图（<code>history.png</code>）
+- [x] Qoder 完成说明（Sites 发布/公开 + history + 7 passed）
 - [x] 代码仓库链接
 - [x] 技术分工（seekdb / PowerContext / Qoder）
 - [x] 数据来源与演示数据说明
