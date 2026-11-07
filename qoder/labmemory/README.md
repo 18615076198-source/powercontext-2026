@@ -7,7 +7,7 @@ LabMemory 是一个面向科研小组的「可追溯记忆」工具：把论文�
 - 赛道：OceanBase 大赛 · Qoder 赛题（学习科研 / 工作提效）
 - 核心技术：**seekdb**（BM25 + 向量 + 标量过滤，RRF 混合检索）+ **PowerContext 1.5.0**（显式决策记忆与召回）
 - 开发工具：**Qoder**（CLI / 桌面端）；发布：**Qoder Sites**
-- 演示站点：<待 Qoder Sites 发布后填入>
+- 演示站点：https://labmemory-lasfpz26o0f.qoder.website
 - 代码目录：<code>powercontext-2026/qoder/labmemory</code>（分支 <code>2026-competition-ecosystem</code>）
 
 ## 演示
@@ -241,14 +241,14 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 
 ## Qoder 开发记录
 
-- 账号 UID：<待登录后填写>
+- 账号 UID：01a1b466-1089-70fc-8d82-c343b049e38a
 - 记录文件：<code>docs/qoder-log.md</code>
 - 说明：项目脚手架、论文下载、演示笔记和规格文档由准备阶段完成；Qoder 参与情况见 <code>docs/qoder-log.md</code>，如实记录准备阶段与 Qoder 会话，不伪造。
 
 ## 提交材料
 
-- 项目网站：<待 Qoder Sites 发布>
-- 代码仓库：<待 push / 开放评审权限>
+- 项目网站：https://labmemory-lasfpz26o0f.qoder.website
+- 代码仓库：https://github.com/18615076198-source/powercontext-2026/tree/2026-competition-ecosystem/qoder/labmemory
 - 运行说明：本 README
 - 验证样例：<code>docs/VERIFICATION.md</code>
 - Qoder 开发记录：<code>docs/qoder-log.md</code>

@@ -63,3 +63,16 @@ def test_search_filter_paper_only():
     ).json()
     assert data["results"]
     assert all(r["source_type"] == "paper" for r in data["results"])
+
+
+def test_history():
+    question = "history probe: chunk size 定在多少，依据是什么？"
+    httpx.post(BASE + "/api/ask", json={"query": question}, timeout=30).raise_for_status()
+    data = httpx.get(BASE + "/api/history?limit=20", timeout=10).json()
+    items = data["items"]
+    assert items
+    assert len(items) <= 20
+    assert any(item["question"] == question for item in items)
+    hit = next(item for item in items if item["question"] == question)
+    assert isinstance(hit["created_at"], str) and hit["created_at"]
+    assert hit["latency_ms"] is not None

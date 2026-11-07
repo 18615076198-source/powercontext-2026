@@ -93,6 +93,19 @@ def stats() -> dict[str, Any]:
     }
 
 
+@app.get("/api/history")
+def history(limit: int = 8) -> dict[str, Any]:
+    limit = max(1, min(int(limit or 8), 20))
+    rows = db.fetch_all(
+        """SELECT id, question, latency_ms, created_at FROM queries
+           ORDER BY id DESC LIMIT %s""",
+        (limit,),
+    )
+    for row in rows:
+        row["created_at"] = "" if row.get("created_at") is None else str(row["created_at"])
+    return {"items": rows}
+
+
 @app.get("/api/papers")
 def papers() -> list[dict[str, Any]]:
     return db.fetch_all(

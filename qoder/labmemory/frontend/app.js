@@ -152,7 +152,8 @@
       '<div class="stats" id="stats"><div class="card skeleton skeleton-line"></div><div class="card skeleton skeleton-line"></div><div class="card skeleton skeleton-line"></div><div class="card skeleton skeleton-line"></div></div>' +
       '<div id="conflict-slot"></div>' +
       '<div class="grid-2" style="margin-top:22px"><div><div class="section-title"><h2>最近的记忆</h2><span class="small">由 PowerContext 保存</span></div><div class="stack" id="memory-mini">' + skeleton(3) + '</div></div>' +
-      '<div><div class="section-title"><h2>从一个真实问题开始</h2><span class="small">点击直接提问</span></div><div class="question-grid" id="question-grid"></div></div></div>';
+      '<div><div class="section-title"><h2>从一个真实问题开始</h2><span class="small">点击直接提问</span></div><div class="question-grid" id="question-grid"></div></div></div>' +
+      '<div class="section-title"><h2>最近提问</h2><span class="small">来自 queries 表 · 点击重新提问</span></div><div class="stack" id="history-list">' + skeleton(2) + '</div>';
 
     document.getElementById("hero-ask").onclick = function () { location.hash = "#/ask"; };
     document.getElementById("hero-memory").onclick = function () { location.hash = "#/memory"; };
@@ -173,6 +174,7 @@
       renderStats();
       renderConflictBanner();
       renderMemoryMini();
+      loadHistory();
       var badge = document.getElementById("conflict-badge");
       if (badge) {
         badge.textContent = state.conflicts.length ? String(state.conflicts.length) : "";
@@ -180,6 +182,37 @@
       }
     }).catch(function (err) {
       toast("加载工作台失败：" + err.message, true);
+    });
+  }
+
+  function loadHistory() {
+    var host = document.getElementById("history-list");
+    if (!host) return;
+    host.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-history-q]");
+      if (!btn) return;
+      var q = btn.getAttribute("data-history-q");
+      location.hash = "#/ask";
+      setTimeout(function () {
+        var input = document.getElementById("ask-input");
+        var form = document.getElementById("ask-form");
+        if (!input || !form) return;
+        input.value = q;
+        form.requestSubmit();
+      }, 60);
+    });
+    apiGet("/api/history?limit=8").then(function (data) {
+      var items = (data.items || []).slice(0, 5);
+      if (!items.length) {
+        host.innerHTML = '<div class="empty" style="padding:18px"><strong>还没有提问记录</strong>问一句就会出现在这里。</div>';
+        return;
+      }
+      host.innerHTML = items.map(function (h) {
+        return '<button class="question" data-history-q="' + esc(h.question) + '">' + esc(truncate(h.question, 120)) +
+          '<span>' + esc(h.created_at || "") + " · " + esc(fmt(h.latency_ms)) + " ms</span></button>";
+      }).join("");
+    }).catch(function () {
+      host.innerHTML = '<div class="empty" style="padding:18px"><strong>最近提问不可用</strong>queries 表暂时读不到。</div>';
     });
   }
 

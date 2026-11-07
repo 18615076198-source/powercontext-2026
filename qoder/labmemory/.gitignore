@@ -7,3 +7,5 @@ data/papers/*.tmp
 frontend/.vite/
 node_modules/
 docs/video/*.webm
+*.qoder.site
+docs/qoder-sites-prepare.json

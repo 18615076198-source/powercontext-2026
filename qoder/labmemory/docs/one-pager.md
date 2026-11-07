@@ -48,6 +48,6 @@
 
 ## 链接
 
-- 项目网站：<待 Qoder Sites 发布>
-- 代码仓库：<待 push / 开放评审权限>
-- Qoder 账号 UID：<待登录后填写>
+- 项目网站：https://labmemory-lasfpz26o0f.qoder.website
+- 代码仓库：https://github.com/18615076198-source/powercontext-2026/tree/2026-competition-ecosystem/qoder/labmemory
+- Qoder 账号 UID：01a1b466-1089-70fc-8d82-c343b049e38a
