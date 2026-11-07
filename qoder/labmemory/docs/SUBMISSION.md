@@ -1,7 +1,7 @@
 # 提交清单（Submission Checklist）
 
 > 赛题：OceanBase 大赛 · Qoder 赛题（总分 20）
-> 当前状态：**Qoder Sites 已发布并公开**；Qoder 编码/测试 session 进行中；技术链路、代码、测试、文档已完成。
+> 当前状态：**Qoder Sites 已发布并公开**；Qoder 编码/测试与重新发布已完成；技术链路、代码、测试、文档已完成。剩余：提交平台 + 可选使用效果。
 
 ## 1. 基础验收
 
@@ -33,7 +33,7 @@
 
 - 仓库：<code>18615076198-source/powercontext-2026</code>（public）
 - 分支：<code>2026-competition-ecosystem</code>
-- 提交：<code>f1510e8</code> + 本次 Qoder 会话改动（待提交）
+- 提交：<code>927f93d</code>（本次 Qoder Sites 记录/文档待提交；最终 hash 见 git log）
 - 项目目录：<code>qoder/labmemory</code>
 - 本地 worktree：<code>D:\deepseek\qoder-2026</code>（不影响其他赛道分支）
 
@@ -51,13 +51,12 @@
 
 ## 5. 剩余关键路径
 
-1. **提交 Qoder 改动**：review diff、commit、push；更新提交清单中的 commit hash。
-2. **重新发布展示站**：把公网 URL / Qoder UID 写进页面后，用 Qoder Sites 重新发布。
-3. **提交平台**：填网站 URL、仓库地址、Qoder UID，上传其余材料。
-4. **使用效果**（鼓励）：找 3-5 位同学试用，记录提问数/反馈/提效对比；附访问统计或日志。
+1. **提交平台**：填网站 URL、仓库地址、Qoder UID，上传其余材料。
+2. **使用效果**（鼓励）：找 3-5 位同学试用，记录提问数/反馈/提效对比；附访问统计或日志。
+3. **提交后复核**：无痕窗口再开一次站点；评审结束前不要暂停/删除站点。
 
 ## 6. 风险
 
-- Qoder 编码证据已补齐（history feature + test_history）；剩余风险是展示站仍为旧版本（占位 URL），需重新发布。
+- 展示站已重新发布并保持 public；匿名访问 200；评审结束前不要暂停/删除站点。
 - 代码仓库为 public，评审可直接访问；若平台要求私有 repo，请改为向评审开放权限。
-- 展示站当前版本仍是发布前的本地文件（含占位符），需在更新 URL 后重新发布。
+- Qoder device flow 曾两次 5 分钟超时；当前使用 PAT 登录。若登录失效，重新设置 <code>QODER_PERSONAL_ACCESS_TOKEN</code> 即可。

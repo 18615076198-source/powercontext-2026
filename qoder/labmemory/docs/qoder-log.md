@@ -7,7 +7,7 @@
 - 账号类型：user（个人账号）
 - 项目路径：<code>powercontext-2026/qoder/labmemory</code>
 - 分支：<code>2026-competition-ecosystem</code>
-- 当前提交：<code>f1510e8</code> + 本次 Qoder 会话改动（待提交）
+- 当前提交：<code>927f93d</code>（Session 2 代码 + 文档）；Session 3 站点更新待提交
 
 ## 1. 准备阶段（非 Qoder，如实记录）
 
@@ -85,7 +85,21 @@ Qoder 实际改动：
 - 测试：<code>tests/test_api.py::test_history</code>；7 passed
 - 前端：<code>frontend/app.js</code> 最近提问区块
 
-## 4. 证明清单
+## 4. Qoder Session 3 — 更新展示站并重新发布（已完成）
+
+- 时间：2026-11-07 13:27 - 13:29（Asia/Shanghai）
+- 模型：Qwen3.8-Max；会话 ID：<code>4147ff99-dde6-48c1-9eb8-bd41c05323b6</code>
+- 目标：把 Qoder Sites 公网 URL、最新截图写进 <code>site/index.html</code> 后，对同一 project 重新 prepare + publish，保持 public。
+- 结果：<code>published: true</code> / publication_completed；access mode <code>public</code>；匿名 <code>https://labmemory-lasfpz26o0f.qoder.website</code> 返回 200。
+- actionId：<code>46e7f531-ba95-4aa6-a7c6-4775370bd3d4</code>
+- deploymentId：<code>01a1b479-7f55-7025-9614-d7630d68b076</code>
+- publishOperationId：<code>01a1b479-e540-7611-b3f7-3cfca5f725f7</code>
+- 上传大小：4,181,050 bytes（比上版增加，含更新后的截图与 URL）
+- descriptor：<code>.LabMemory 研忆.qoder.site</code> 已恢复/指向新 action（工具生成，不手改）
+- 说明：未创建新站点、未修改站点文件；Qoder 仅更新草稿并发布。
+- 日志：<code>docs/qoder-sites-republish.log</code>
+
+## 5. 证明清单
 
 - Qoder CLI 版本：1.1.84
 - Qoder 登录：已登录（PAT，账号类型 user）
@@ -93,4 +107,5 @@ Qoder 实际改动：
 - Qoder Sites URL：https://labmemory-lasfpz26o0f.qoder.website
 - 公网验证：匿名 200（截图 <code>docs/screenshots/qoder-site.png</code>）
 - Qoder 编码会话：已完成（Session 2，真实代码 + 测试）
-- 对应 commit：<code>f1510e8</code> + 本次 Qoder 改动（待提交，见 git log）
+- Qoder Sites 重新发布：已完成（Session 3，public，匿名 200）
+- 对应 commit：<code>927f93d</code>（Session 2 代码）；本次 Qoder Sites 记录/文档待提交
