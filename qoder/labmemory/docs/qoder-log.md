@@ -119,9 +119,9 @@ Qoder 实际改动：
 - Qoder Sites URL：https://labmemory-lasfpz26o0f.qoder.website
 - 公网验证：匿名 200（截图 <code>docs/screenshots/qoder-site.png</code>）
 - Qoder 编码会话：已完成（Session 2，真实代码 + 测试）
-- Qoder Sites 更新发布：Session 3 + Session 4 已完成（public，匿名 200）；Session 5 最终上传重试中
+- Qoder Sites 更新发布：Session 3 + Session 4 + Session 5 均已完成（public，匿名 200）
 - 访问统计：Qoder Sites 24h 26 PV / 6 estimated UV（partial，下限）
-- 对应 commit：<code>ac8cf79</code>（预热/最近提问展示）；本轮使用数据/视频待提交，最终 hash 见 git log
+- 对应 commit：<code>31a1f00</code>（访问统计/15 秒视频）；本轮文档更新待提交，最终 hash 见 git log
 
 ## 7. 其他工程优化（非 Qoder，如实记录）
 
@@ -129,10 +129,11 @@ Qoder 实际改动：
 - API 测试 <code>/api/ask</code> 超时从 30s 调到 60s；重启服务后 <code>pytest -q</code> **7 passed**。
 - 这两项由操作者完成，不冒充 Qoder 产出。
 
-## 8. 追加：访问统计与最终站点更新（2026-11-07 21:10）
+## 8. 追加：访问统计与最终站点更新（2026-11-07 21:10，已完成）
 
 - Qoder 只读读取 Qoder Sites 访问统计：24h/7d **26 PV / 6 estimated UV**；coverage <code>partial</code>（<code>ingestion_watermark_unavailable</code>），数字为下限；日志 <code>docs/qoder-analytics.log</code>。
 - 本地站点已更新：15 秒演示视频（含最近提问/点击重问）+ 「使用数据」区块（26 PV / 6 UV）。
-- 对同一 project 发起最终 prepare + publish（actionId <code>797b8a6b-cab3-4f15-8876-6b642bc8ff80</code>）；Qoder Sites 返回 <code>sites_upload_unavailable</code>，Qoder 用同一 actionId 重试中。
-- 若本次上传最终失败，线上保持 Session 4 的版本（已含 Qoder 完成说明、最近提问截图、URL、public），不影响基础验收；本地/仓库仍包含新视频与使用数据。
+- 对同一 project 发起最终 prepare + publish：actionId <code>797b8a6b-cab3-4f15-8876-6b642bc8ff80</code>；首次上传返回 <code>sites_upload_unavailable</code>，保留同一 actionId 重试后成功。
+- 发布结果：publishOperationId <code>01a1b629-8734-70a3-b7ba-9acc8e3157d3</code>，published/committed，readiness publication_completed；access mode <code>public</code>；匿名 URL 返回 200。
+- 15 秒视频与使用数据区块已包含在发布版本中；Qoder 未修改站点文件。
 - 日志：<code>docs/qoder-sites-republish3.log</code>

@@ -33,7 +33,7 @@
 
 - 仓库：<code>18615076198-source/powercontext-2026</code>（public）
 - 分支：<code>2026-competition-ecosystem</code>
-- 提交：<code>ac8cf79</code>（本轮使用数据/视频更新待提交；最终 hash 见 git log）
+- 提交：<code>31a1f00</code>（最终站点更新/使用数据；本轮文档提交后为最新 hash）
 - 项目目录：<code>qoder/labmemory</code>
 - 本地 worktree：<code>D:\deepseek\qoder-2026</code>（不影响其他赛道分支）
 
