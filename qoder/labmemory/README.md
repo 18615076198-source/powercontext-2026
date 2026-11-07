@@ -246,8 +246,14 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 - 账号 UID：01a1b466-1089-70fc-8d82-c343b049e38a
 - Qoder Sites：https://labmemory-lasfpz26o0f.qoder.website
 - 记录文件：<code>docs/qoder-log.md</code>
-- Qoder 实际完成：Qoder Sites 创建/发布/公开、<code>/api/history</code> + Dashboard「最近提问」、<code>test_history</code>、两次站点更新发布。
+- Qoder 实际完成：Qoder Sites 创建/发布/公开、<code>/api/history</code> + Dashboard「最近提问」、<code>test_history</code>、多次站点更新发布、读取 Qoder Sites 访问统计。
 - 说明：项目脚手架、论文下载、演示笔记和规格文档由准备阶段完成；Qoder 参与情况见 <code>docs/qoder-log.md</code>，如实记录准备阶段与 Qoder 会话，不伪造。
+
+## 使用数据（截至 2026-11-07 21:10）
+
+- Qoder Sites 24h：**26 PV / 6 estimated UV**；7d 同（流量全部在 2026-11-07）。
+- 来源：Qoder Sites analytics；coverage **partial**（<code>ingestion_watermark_unavailable</code>），数字为下限，未覆盖流量不视为 0。
+- 记录：<code>docs/qoder-analytics.log</code>；站点「使用」区块。
 
 ## 提交材料
 
@@ -258,6 +264,7 @@ curl -s -X POST http://127.0.0.1:18080/v1/memory/entries/list \
 - Qoder 开发记录：<code>docs/qoder-log.md</code>
 - 一页项目介绍：<code>docs/one-pager.md</code>
 - 架构说明：<code>docs/ARCHITECTURE.md</code>
+- 使用数据：<code>docs/qoder-analytics.log</code>（Qoder Sites 24h 26 PV / 6 estimated UV，partial）
 
 ## 已知限制
 

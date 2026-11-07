@@ -18,6 +18,7 @@
       <a href="#how">怎么用</a>
       <a href="#demo">演示</a>
       <a href="#tech">技术</a>
+      <a href="#usage">使用</a>
       <a href="#start">运行</a>
       <a class="nav-cta" href="#repo">代码仓库</a>
     </nav>
@@ -30,7 +31,7 @@
         <h1>把组会的「为什么」，<br>留在下一次组会之前。</h1>
         <p class="lede">LabMemory 把论文、实验笔记和组会决策放进同一个可检索、可追溯的记忆。问一句「上次为什么放弃这个方法」，它给你原文出处和当时的决定。</p>
         <div class="hero-actions">
-          <a class="btn" href="#demo">看 21 秒演示</a>
+          <a class="btn" href="#demo">看 15 秒演示</a>
           <a class="btn ghost" href="#start">本地跑起来</a>
         </div>
         <div class="hero-badges">
@@ -91,7 +92,7 @@
       </div>
       <div class="video-wrap">
         <video controls preload="metadata" poster="assets/ask.png" src="assets/demo.mp4"></video>
-        <div class="video-note">21 秒无声演示：工作台 → 提问（记忆 + 引用）→ 资料库 → 记忆 → 冲突。</div>
+        <div class="video-note">15 秒无声演示：工作台 → 最近提问（点击重问）→ 提问引用 → 冲突 → 记忆 → 资料库。</div>
       </div>
       <div class="demo-main">
         <img src="assets/ask.png" alt="提问与引用截图">
@@ -166,6 +167,19 @@ POST /v1/memory/search
         <img src="assets/history.png" alt="Qoder 实现的最近提问">
         <figcaption><strong>Qoder 实现的「最近提问」</strong>来自 seekdb 的 <code>queries</code> 表；点击任意一条可回到提问页重新提问。</figcaption>
       </figure>
+    </section>
+
+    <section id="usage" class="section usage-section">
+      <div class="section-head">
+        <div><div class="eyebrow">USAGE</div><h2>上线后的访问数据。</h2></div>
+        <p class="section-note">来源：Qoder Sites 访问统计，2026-11-07 13:10Z 快照；coverage partial，数字为下限。</p>
+      </div>
+      <div class="usage-stats">
+        <div><strong>26</strong><span>24h PV</span></div>
+        <div><strong>6</strong><span>24h estimated UV</span></div>
+        <div><strong>8h</strong><span>公开访问时长（约）</span></div>
+      </div>
+      <p class="usage-note">Qoder Sites analytics 返回 <code>ingestion_watermark_unavailable</code>；未覆盖的流量不视为 0。数据只用于说明真实访问，不包含个人信息。</p>
     </section>
 
     <section id="start" class="section start-section">

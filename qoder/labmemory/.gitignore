@@ -9,3 +9,5 @@ node_modules/
 docs/video/*.webm
 *.qoder.site
 docs/qoder-sites-prepare.json
+.sites-prepare-input.json
+docs/qoder-sites-republish3.log
