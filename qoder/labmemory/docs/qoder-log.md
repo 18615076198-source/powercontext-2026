@@ -127,7 +127,9 @@ Qoder 实际改动：
 
 - FastAPI 启动时预热 embedding 模型，避免首次 <code>/api/ask</code> 冷启动超时；首次启动约多 2-5 秒。
 - API 测试 <code>/api/ask</code> 超时从 30s 调到 60s；重启服务后 <code>pytest -q</code> **7 passed**。
-- 这两项由操作者完成，不冒充 Qoder 产出。
+- 修复冲突复核任务：SQL 改为 JOIN papers，复核记忆使用论文标题而不是 paper_id；新增 <code>tests/test_conflicts_unit.py</code> 与 <code>pytest.ini</code>。
+- 当前完整测试：<code>pytest -q</code> **8 passed**（7 个 API + 1 个冲突复核 unit test）。
+- 这些由操作者完成，不冒充 Qoder 产出。
 
 ## 8. 追加：访问统计与最终站点更新（2026-11-07 21:10，已完成）
 

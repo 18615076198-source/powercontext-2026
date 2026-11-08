@@ -10,7 +10,7 @@
 | 网站通过 Qoder Sites 发布，任何人可访问 | **完成** | https://labmemory-lasfpz26o0f.qoder.website；匿名 200；截图 <code>docs/screenshots/qoder-site.png</code> |
 | 项目按运行说明可跑通 | 完成 | <code>README.md</code>、<code>scripts/start_all.sh</code>、<code>scripts/verify.sh</code> |
 | 至少一组验证样例 | 完成 | <code>docs/VERIFICATION.md</code> + <code>docs/screenshots/</code> |
-| Qoder 开发可核对 | **完成** | <code>docs/qoder-log.md</code>：Sites session + 编码 session（history feature）+ pytest 7/7 |
+| Qoder 开发可核对 | **完成** | <code>docs/qoder-log.md</code>：Sites session + 编码 session（history feature）+ pytest 8/8 |
 | seekdb/PowerContext 真实发挥作用 | 完成 | 874 chunks、BM25+向量+RRF、8 条记忆、artifact revision、<code>docs/VERIFICATION.md</code> |
 
 ## 2. 提交物
@@ -33,7 +33,7 @@
 
 - 仓库：<code>18615076198-source/powercontext-2026</code>（public）
 - 分支：<code>2026-competition-ecosystem</code>
-- 提交：<code>31a1f00</code>（最终站点更新/使用数据；本轮文档提交后为最新 hash）
+- 提交：见 git log（最新 head；2026-11-08 更新）
 - 项目目录：<code>qoder/labmemory</code>
 - 本地 worktree：<code>D:\deepseek\qoder-2026</code>（不影响其他赛道分支）
 
@@ -44,7 +44,7 @@
 - [x] 演示视频（15 秒，<code>site/assets/demo.mp4</code>，含最近提问/点击重问）
 - [x] 截图（工作台/提问/资料库/记忆/冲突）
 - [x] Qoder 实现的「最近提问」截图（<code>history.png</code>）
-- [x] Qoder 完成说明（Sites 发布/公开 + history + 7 passed）
+- [x] Qoder 完成说明（Sites 发布/公开 + history + 8 passed）
 - [x] 代码仓库链接
 - [x] 技术分工（seekdb / PowerContext / Qoder）
 - [x] 数据来源与演示数据说明

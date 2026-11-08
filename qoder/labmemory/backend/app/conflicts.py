@@ -139,7 +139,12 @@ def dismiss(conflict_id: str) -> bool:
 
 
 def create_review_task(conflict_id: str) -> dict[str, Any] | None:
-    row = db.fetch_one("SELECT * FROM conflicts WHERE id=%s", (conflict_id,))
+    row = db.fetch_one(
+        """SELECT c.*, p.title AS paper_title
+           FROM conflicts c LEFT JOIN papers p ON p.id = c.paper_id
+           WHERE c.id = %s""",
+        (conflict_id,),
+    )
     if not row:
         return None
     text = (
